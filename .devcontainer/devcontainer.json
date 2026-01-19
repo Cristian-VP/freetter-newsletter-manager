@@ -1,0 +1,24 @@
+{
+    "name": "Freetter Dev",
+    "service": "cli",
+    "remoteUser": "user",
+    "shutdownAction": "stopCompose",
+    "workspaceFolder": "/workspaces/laravel",
+    "dockerComposeFile": "docker-compose.yml",
+    "forwardPorts": [80, 5173],
+    "postCreateCommand": "composer --version && php -v",
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "bmewburn.vscode-intelephense-client",
+                "eamodio.gitlens",
+                "EditorConfig.EditorConfig",
+                "mikestead.dotenv",
+                "onecentlin.laravel-blade",
+                "dbaeumer.vscode-eslint",
+                "esbenp.prettier-vscode",
+                "bradlc.vscode-tailwindcss"
+            ]
+        }
+    }
+}

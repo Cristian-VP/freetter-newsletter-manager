@@ -3,7 +3,7 @@
 <!-- Badges (Escudos) -->
 [![Build Status](https://github.com/freetter/freetter/actions/workflows/ci.yml/badge.svg)](https://github.com/freetter/freetter/actions)
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
-[![Laravel v11](https://img.shields.io/badge/Laravel-11-FF2D20.svg?logo=laravel)](https://laravel.com/)
+[![Laravel v12](https://img.shields.io/badge/Laravel-11-FF2D20.svg?logo=laravel)](https://laravel.com/)
 [![Carbon Neutral](https://img.shields.io/badge/Carbon-Tracking%20Integrated-4CAF50.svg?style=flat)](docs/sustainability.md)
 
 ## Sobre Freetter
@@ -27,11 +27,12 @@ Nuestro objetivo es ofrecer a creadores, periodistas independientes y organizaci
 
 | Componente               | Tecnología     | Versión Clave | Propósito Principal                                                               |
 |:-------------------------|:---------------|:--------------|:----------------------------------------------------------------------------------|
-| **Backend Core**         | Laravel        | **11**        | Ecosistema maduro, ORM potente y sistema de colas nativo (Queue).                 |
-| **Frontend Interactivo** | React          | **18**        | Desarrollo de componentes de interfaz modernos.                                   |
-| **Puente SPA**           | Inertia.js     | -             | Permite una Single Page Application (SPA) sin necesidad de una API REST separada. |
-| **Base de Datos**        | PostgreSQL     | 15            | Robustez, soporte de transacciones y tipo JSONB para contenido estructurado.      |
-| **Caché & Colas**        | Redis          | 7             | Backend de colas de trabajo y caché de sesiones.                                  |
+| **Backend Core**         | Laravel        | **12**        | Ecosistema maduro, ORM potente y sistema de colas nativo (Queue).                 |
+| **Frontend Interactivo** | React          | **19**        | Desarrollo de componentes de interfaz modernos.                                   |
+| **Puente SPA**           | Inertia.js     | **2.0**       | Permite una Single Page Application (SPA) sin necesidad de una API REST separada. |
+| **Base de Datos**        | PostgreSQL     | **17**        | Robustez, soporte de transacciones y tipo JSONB para contenido estructurado.      |
+| **Caché & Colas**        | Redis          | **7**         | Backend de colas de trabajo y caché de sesiones.                                  |
+| **Runtime JavaScript**   | Node.js        | **22 LTS**    | Entorno de ejecución para React y Vite.                                           |
 | **Emails**               | MJML / Mailgun | -             | MJML para renderizado; Mailgun para entregabilidad y rate limiting.               |
 
 ## Arquitectura del Sistema
@@ -48,10 +49,11 @@ El proyecto se desarrolla como un **Monolito Modular**, una elección sólida pa
 
 ### Requisitos mínimos
 
-* PHP 8.2+
+* PHP 8.4+
 * Composer
-* Node.js (LTS) y npm
-* PostgreSQL y Redis en funcionamiento
+* Node.js 22 LTS y npm
+* PostgreSQL 17+
+* Redis 7+ 
 
 ### Pasos de instalación (rápidos)
 
