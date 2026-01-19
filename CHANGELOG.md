@@ -8,4 +8,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Enviroment development into a Dev Container (FRT-1)
+- Stack installation, basic Stack configuration and declaration of migrations and basic models (#FRT-1)
