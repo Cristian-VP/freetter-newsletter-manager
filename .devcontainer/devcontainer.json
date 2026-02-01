@@ -3,8 +3,8 @@
     "service": "cli",
     "remoteUser": "user",
     "shutdownAction": "stopCompose",
-    "workspaceFolder": "/workspaces/laravel",
-    "dockerComposeFile": "docker-compose.yml",
+    "workspaceFolder": "/workspace",
+    "dockerComposeFile": "compose.yaml",
     "forwardPorts": [80, 5173],
     "postCreateCommand": "composer --version && php -v",
     "customizations": {

@@ -8,4 +8,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Enviroment development into a Dev Container (FRT-1)
+- Enviroment development into a Dev Container (#FRT-1)
+- Internachi package used for create DDA system (#FRT-2)

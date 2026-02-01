@@ -1,0 +1,24 @@
+{
+	"name": "freetter/delivery",
+	"description": "",
+	"type": "library",
+	"version": "1.0",
+	"license": "proprietary",
+	"require": {},
+	"autoload": {
+		"psr-4": {
+			"Domains\\Delivery\\": "src/",
+			"Domains\\Delivery\\Tests\\": "tests/",
+			"Domains\\Delivery\\Database\\Factories\\": "database/factories/",
+			"Domains\\Delivery\\Database\\Seeders\\": "database/seeders/"
+		}
+	},
+	"minimum-stability": "stable",
+	"extra": {
+		"laravel": {
+			"providers": [
+				"Domains\\Delivery\\Providers\\DeliveryServiceProvider"
+			]
+		}
+	}
+}

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "34cca542ba65a4bafc81301fbab1dc94",
+    "content-hash": "0c809b9c0a744476954a96840eb3c36a",
     "packages": [
         {
             "name": "brick/math",
@@ -1003,6 +1003,38 @@
             "time": "2024-02-05T11:56:58+00:00"
         },
         {
+            "name": "domains/identity",
+            "version": "1.0",
+            "dist": {
+                "type": "path",
+                "url": "app-modules/identity",
+                "reference": "6de13c3f17455aa51bafb61de10c7915df440509"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Domains\\Identity\\Providers\\IdentityServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Domains\\Identity\\": "src/",
+                    "Domains\\Identity\\Tests\\": "tests/",
+                    "Domains\\Identity\\Database\\Factories\\": "database/factories/",
+                    "Domains\\Identity\\Database\\Seeders\\": "database/seeders/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
             "name": "dragonmantank/cron-expression",
             "version": "v3.6.0",
             "source": {
@@ -1132,6 +1164,134 @@
                 }
             ],
             "time": "2025-03-06T22:45:56+00:00"
+        },
+        {
+            "name": "freetter/audience",
+            "version": "1.0",
+            "dist": {
+                "type": "path",
+                "url": "app-modules/audience",
+                "reference": "fd4119fb6ab788be431cf15874e820821cb80674"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Domains\\Audience\\Providers\\AudienceServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Domains\\Audience\\": "src/",
+                    "Domains\\Audience\\Tests\\": "tests/",
+                    "Domains\\Audience\\Database\\Factories\\": "database/factories/",
+                    "Domains\\Audience\\Database\\Seeders\\": "database/seeders/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "freetter/community",
+            "version": "1.0",
+            "dist": {
+                "type": "path",
+                "url": "app-modules/community",
+                "reference": "4be41ac4f16779d7a05243d89c9cb318964a19c4"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Domains\\Community\\Providers\\CommunityServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Domains\\Community\\": "src/",
+                    "Domains\\Community\\Tests\\": "tests/",
+                    "Domains\\Community\\Database\\Factories\\": "database/factories/",
+                    "Domains\\Community\\Database\\Seeders\\": "database/seeders/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "freetter/delivery",
+            "version": "1.0",
+            "dist": {
+                "type": "path",
+                "url": "app-modules/delivery",
+                "reference": "9fcc8a5ebef5a2b5a8c3e5cea7aa1b54d0fa884b"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Domains\\Delivery\\Providers\\DeliveryServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Domains\\Delivery\\": "src/",
+                    "Domains\\Delivery\\Tests\\": "tests/",
+                    "Domains\\Delivery\\Database\\Factories\\": "database/factories/",
+                    "Domains\\Delivery\\Database\\Seeders\\": "database/seeders/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "freetter/publishing",
+            "version": "1.0",
+            "dist": {
+                "type": "path",
+                "url": "app-modules/publishing",
+                "reference": "e7f021dd5b9b4470dd0fc3a174a8043ea6d55172"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "Domains\\Publishing\\Providers\\PublishingServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Domains\\Publishing\\": "src/",
+                    "Domains\\Publishing\\Tests\\": "tests/",
+                    "Domains\\Publishing\\Database\\Factories\\": "database/factories/",
+                    "Domains\\Publishing\\Database\\Seeders\\": "database/seeders/"
+                }
+            },
+            "license": [
+                "proprietary"
+            ],
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
         },
         {
             "name": "fruitcake/php-cors",

@@ -1,0 +1,24 @@
+{
+	"name": "freetter/audience",
+	"description": "",
+	"type": "library",
+	"version": "1.0",
+	"license": "proprietary",
+	"require": {},
+	"autoload": {
+		"psr-4": {
+			"Domains\\Audience\\": "src/",
+			"Domains\\Audience\\Tests\\": "tests/",
+			"Domains\\Audience\\Database\\Factories\\": "database/factories/",
+			"Domains\\Audience\\Database\\Seeders\\": "database/seeders/"
+		}
+	},
+	"minimum-stability": "stable",
+	"extra": {
+		"laravel": {
+			"providers": [
+				"Domains\\Audience\\Providers\\AudienceServiceProvider"
+			]
+		}
+	}
+}
