@@ -1,0 +1,24 @@
+{
+	"name": "domains/identity",
+	"description": "",
+	"type": "library",
+	"version": "1.0",
+	"license": "proprietary",
+	"require": {},
+	"autoload": {
+		"psr-4": {
+			"Domains\\Identity\\": "src/",
+			"Domains\\Identity\\Tests\\": "tests/",
+			"Domains\\Identity\\Database\\Factories\\": "database/factories/",
+			"Domains\\Identity\\Database\\Seeders\\": "database/seeders/"
+		}
+	},
+	"minimum-stability": "stable",
+	"extra": {
+		"laravel": {
+			"providers": [
+				"Domains\\Identity\\Providers\\IdentityServiceProvider"
+			]
+		}
+	}
+}
