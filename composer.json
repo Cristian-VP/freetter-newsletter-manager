@@ -10,10 +10,11 @@
     "license": "MIT",
     "require": {
         "php": "^8.2",
-        "domains/identity": "*",
+        "domains/activity": "*",
         "domains/audience": "*",
         "domains/community": "*",
         "domains/delivery": "*",
+        "domains/identity": "*",
         "domains/publishing": "*",
         "internachi/modular": "^2.3",
         "laravel/framework": "^12.0",
