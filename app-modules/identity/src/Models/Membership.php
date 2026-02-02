@@ -35,4 +35,14 @@ class Membership extends Model
     {
         return $this->belongsTo(Workspace::class);
     }
+
+    public function isOwner(): bool
+    {
+        return $this->role === 'owner';
+    }
+
+    public function getRole(): string
+    {
+        return $this->role;
+    }
 }

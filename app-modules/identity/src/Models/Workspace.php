@@ -19,8 +19,8 @@ class Workspace extends Model
     ];
 
     protected $casts = [
-        'branding_config' => 'array',  // ✅ JSONB -> Array automático
-        'donation_config' => 'array',   // ✅ JSONB -> Array automático
+        'branding_config' => 'array',
+        'donation_config' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -45,6 +45,10 @@ class Workspace extends Model
     // Helper: Obtener owner del workspace
     public function owner()
     {
-        return $this->users()->wherePivot('role', 'owner')->first();
+         return $this->memberships()
+                    ->where('role', 'owner')
+                    ->first()
+                    ?->user;
     }
+
 }
