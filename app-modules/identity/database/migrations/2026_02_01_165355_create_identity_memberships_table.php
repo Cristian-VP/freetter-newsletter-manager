@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             $table->uuid('user_id');
             $table->uuid('workspace_id');
-            $table->enum('role', ['owner', 'admin', 'editor', 'viewer']);
+            $table->enum('role', ['owner', 'admin', 'editor', 'viewer', 'writer']);
             $table->timestamp('joined_at');
             $table->unique(['user_id', 'workspace_id']);
             $table->index('workspace_id');

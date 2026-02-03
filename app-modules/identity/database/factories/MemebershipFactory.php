@@ -21,7 +21,7 @@ class MembershipFactory extends Factory
         return [
             'user_id' => User::factory(),      // Crea User automáticamente
             'workspace_id' => Workspace::factory(),  // Crea Workspace automáticamente
-            'role' => $this->faker->randomElement(['admin', 'editor', 'viewer']),
+            'role' => $this->faker->randomElement(['admin', 'editor', 'viewer', 'writer']),
             'joined_at' => now(),
         ];
     }
@@ -63,6 +63,16 @@ class MembershipFactory extends Factory
     {
         return $this->state([
             'role' => 'viewer',
+        ]);
+    }
+
+    /**
+     * Membership con rol writer
+     */
+    public function writer(): static
+        {
+        return $this->state([
+            'role' => 'writer',
         ]);
     }
 
