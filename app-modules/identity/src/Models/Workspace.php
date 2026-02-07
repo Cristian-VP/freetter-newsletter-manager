@@ -58,5 +58,4 @@ class Workspace extends Model
                     ->first()
                     ?->user;
     }
-
 }
