@@ -78,15 +78,6 @@
 
 ## ⚠️ Notas Importantes para Migraciones
 
-### 1. Orden de Creación (Dependencias FK)
-Crear en este orden:
-1. IDENTITY (users, workspaces, memberships, invitations)
-2. PUBLISHING (posts, post_versions, media, post_media, tags, post_tag)
-3. COMMUNITY (comments, likes, followers)
-4. AUDIENCE (subscribers, import_jobs)
-5. DELIVERY (campaigns, bounces)
-6. ACTIVITY (logs, streams, alerts)
-
 ### 2. Campos Importantes
 - **UUID:** Usar `uuid()` en Laravel o `gen_random_uuid()` en PostgreSQL
 - **Timestamps:** Laravel maneja automáticamente `created_at` y `updated_at` (si está configurado)
