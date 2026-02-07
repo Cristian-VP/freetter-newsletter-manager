@@ -5,14 +5,16 @@ namespace Domains\Identity\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Support\Str;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Domains\Identity\Database\Factories\InvitationFactory;
 
 class Invitation extends Model
 {
-    use HasUuids;
+    use HasUuids, HasFactory;
 
     protected $table = 'identity_invitations';
 
-    public $timestamps = false; // ✅ Deshabilitar timestamps automáticos
+    public $timestamps = false;
 
     protected $fillable = [
         'workspace_id',
@@ -75,5 +77,11 @@ class Invitation extends Model
             'accepted_by_user_id' => $user->id,
             'accepted_at' => now(),
         ]);
+    }
+
+    // Constructor for the factory or Tinker
+    protected static function newFactory()
+    {
+        return InvitationFactory::new();
     }
 }

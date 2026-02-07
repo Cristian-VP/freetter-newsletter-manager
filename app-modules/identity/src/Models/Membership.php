@@ -6,10 +6,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Domains\Identity\Models\User;
 use Domains\Identity\Models\Workspace;
-
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Domains\Identity\Database\Factories\MembershipFactory;
 class Membership extends Model
 {
-    use HasUuids;
+    use HasUuids, HasFactory;
 
     protected $table = 'identity_memberships';
 
@@ -44,5 +45,11 @@ class Membership extends Model
     public function getRole(): string
     {
         return $this->role;
+    }
+
+    // Constructor called by factory or Tinker
+    protected static function newFactory()
+    {
+        return MembershipFactory::new();
     }
 }

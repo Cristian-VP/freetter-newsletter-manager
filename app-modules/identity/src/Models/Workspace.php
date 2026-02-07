@@ -4,10 +4,12 @@ namespace Domains\Identity\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+Use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Domains\Identity\Database\Factories\WorkspaceFactory;
 
 class Workspace extends Model
 {
-    use HasUuids;
+    use HasUuids, HasFactory;
 
     protected $table = 'identity_workspaces';
 
@@ -24,6 +26,12 @@ class Workspace extends Model
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
+
+    // Constructor llamado por factory o Tinker
+    protected static function newFactory()
+    {
+        return WorkspaceFactory::new();
+    }
 
     // Relaciones
     public function memberships()

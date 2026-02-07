@@ -2,13 +2,15 @@
 
 namespace Domains\Identity\Models;
 
+use Domains\Identity\Database\Factories\UserFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 
 class User extends Authenticatable
 {
-    use HasUuids, Notifiable;
+    use HasUuids, Notifiable, HasFactory;
 
     protected $table = 'identity_users';
 
@@ -26,6 +28,12 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    // Constructor called by factory or Tinker
+    protected static function newFactory()
+    {
+        return UserFactory::new();
+    }
 
     // Relaciones
     public function memberships()
