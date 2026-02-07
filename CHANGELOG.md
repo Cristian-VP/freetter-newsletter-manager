@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [07/02/206]
 
 ### Added
+- Run Laravel empty project without started-kit (#FRT-0)
 - Enviroment development into a Dev Container (#FRT-1)
 - Internachi package used for create DDA system (#FRT-2)
 - Identity models, migrations, factories implemented (#FRT-3)
