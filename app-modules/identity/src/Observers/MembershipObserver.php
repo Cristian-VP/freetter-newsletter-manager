@@ -3,6 +3,7 @@
 namespace Domains\Identity\Observers;
 
 use Domains\Identity\Models\Membership;
+use Domains\Identity\Events\MembershipCreated;
 
 class MembershipObserver
 {
@@ -11,7 +12,9 @@ class MembershipObserver
      */
     public function created(Membership $membership): void
     {
-        //
+        event(new MembershipCreated(
+            membership: $membership
+        ));
     }
 
     /**

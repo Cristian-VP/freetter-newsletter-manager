@@ -3,6 +3,7 @@
 namespace Domains\Identity\Observers;
 
 use Domains\Identity\Models\Workspace;
+use Domains\Identity\Events\WorkspaceCreated;
 
 class WorkspaceObserver
 {
@@ -11,7 +12,11 @@ class WorkspaceObserver
      */
     public function created(Workspace $workspace): void
     {
-        //
+          // Disparar evento WorkspaceCreated
+        event(new WorkspaceCreated(
+            workspace: $workspace,
+            ownerId: auth()->null // Puede ser null si se crea desde CLI/Tinker
+        ));
     }
 
     /**
