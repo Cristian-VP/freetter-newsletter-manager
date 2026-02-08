@@ -33,8 +33,8 @@ class LogMembershipCreated
                 'role' => $event->membership->role,
                 'joined_at' => $event->membership->joined_at->format('c'),
             ],
-            'ip_address' => $event->context['ip'] ?? request()->ip(),
-            'user_agent' => $event->context['user_agent'] ?? request()->userAgent(),
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
         ]);
     }
 }

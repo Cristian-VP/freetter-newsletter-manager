@@ -22,7 +22,7 @@ class LogWorkspaceCreated
      */
     public function handle(WorkspaceCreated $event): void
     {
-        ActivityLog::created([
+        ActivityLog::create([
             'user_id' => $event->ownerId,
             'action' => 'workspace.created',
             'entity_type' => 'workspace',
@@ -31,8 +31,8 @@ class LogWorkspaceCreated
                 'name' => $event->workspace->name,
                 'slug' => $event->workspace->slug,
             ],
-            'ip_address' => $event->context['ip'] ?? request()->ip(),
-            'user_agent' => $event->context['user_agent'] ?? request()->userAgent(),
+            'ip_address' => request()->ip(),
+            'user_agent' => request()->userAgent(),
         ]);
     }
 }

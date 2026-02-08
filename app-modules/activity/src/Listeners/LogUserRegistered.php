@@ -27,7 +27,7 @@ class LogUserRegistered
      */
     public function handle(UserRegistered $event): void
     {
-        ActivityLog::created([
+        ActivityLog::create([
             'user_id' => null,
             'action' => 'user.registered',
             'entity_type' => 'user',
@@ -35,12 +35,10 @@ class LogUserRegistered
             'metadata' => [
                 'name' => $event->user->name,
                 'email' => $event->user->email,
-                'context' => $event->user->email,
+                'context' => $event->context,
             ],
             'ip_address' => $event->context['ip'] ?? request()->ip(),
             'user_agent' => $event->context['user_agent'] ?? request()->userAgent(),
-        ]
-
-        );
+        ]);
     }
 }
