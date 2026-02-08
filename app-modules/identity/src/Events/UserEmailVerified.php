@@ -9,6 +9,19 @@ use Illuminate\Broadcasting\PrivateChannel;
 use Illuminate\Contracts\Broadcasting\ShouldBroadcast;
 use Illuminate\Foundation\Events\Dispatchable;
 use Illuminate\Queue\SerializesModels;
+use Domains\Identity\Models\User;
+
+/**
+ * Event: Un usuario verificó su email
+ *
+ * PROPÓSITO:
+ * - Notificar que un usuario completó la verificación de email
+ * - Importante para GDPR y compliance
+ *
+ * DATOS:
+ * - User: El usuario que verificó su email
+ * - verifiedAt: Timestamp de verificación
+ */
 
 class UserEmailVerified
 {
@@ -17,10 +30,10 @@ class UserEmailVerified
     /**
      * Create a new event instance.
      */
-    public function __construct()
-    {
-        //
-    }
+    public function __construct(
+        public User $user,
+        public \DateTimeImmutable $verifiedAt
+    ) {}
 
     /**
      * Get the channels the event should broadcast on.
