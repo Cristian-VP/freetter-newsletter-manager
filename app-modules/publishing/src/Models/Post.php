@@ -6,11 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
-use Domains\Identity\Models\User;
-use Domains\Identity\Models\Workspace;
 use Domains\Publishing\Models\PostVersion;
 use Domains\Publishing\Models\Tag;
 use Domains\Publishing\Models\Media;
+
 class Post extends Model
 {
     use HasUuids, HasFactory;
@@ -37,16 +36,6 @@ class Post extends Model
     ];
 
     //Ralationships
-    public function workspace()
-    {
-        return $this->belongsTo(Workspace::class, 'workspace_id');
-    }
-
-    public function author()
-    {
-        return $this->belongsTo(User::class, 'user_id');
-    }
-
     public function versions()
     {
         return $this->hasMany(PostVersions::class, 'post_id');
@@ -54,7 +43,11 @@ class Post extends Model
 
     public function tags()
     {
-        return $this->belongsToMany(Tag::class, 'publishing__post_tags', 'post_id', 'tag_id');
+        return $this->belongsToMany(
+            Tag::class,
+            'publishing__post_tags',
+            'post_id', 'tag_id'
+        );
     }
 
     public function media()
@@ -78,7 +71,7 @@ class Post extends Model
      */
     public function forWorkspace(Builder $query, string $id): Builder
     {
-        return $query->where(Workspace::qualifyColumn('id'), $id);
+        return $query->where('workspace_id', $id);
     }
 
     /**
@@ -110,6 +103,18 @@ class Post extends Model
     }
 
     //Helper methods
+
+
+    public function getAuthorID(): ?string
+    {
+        return $this->author_id;
+    }
+
+    public function getWorkspaceID(): string
+    {
+        return $this->workspace_id;
+    }
+
     public function shouldBeAutoPublished(): bool
     {
         return $this->status === 'scheduled'
