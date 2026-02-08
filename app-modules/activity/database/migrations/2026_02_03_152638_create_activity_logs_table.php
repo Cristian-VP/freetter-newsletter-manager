@@ -22,7 +22,12 @@ return new class extends Migration
     {
         Schema::create('activity_logs', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('user_id')->nullable();
+            //Foreign key
+            $table->foreignUuid('user_id')
+                ->nullable()
+                ->constrained('identity_users')
+                ->nullOnDelete()
+                ->comment('User than makes the action, null for system actions');
             $table->string('action', 100);
             $table->string('entity_type', 50);
             $table->uuid('entity_id');

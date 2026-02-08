@@ -23,7 +23,7 @@ class InvitationFactory extends Factory
         return [
             'workspace_id' => Workspace::factory(),
             'email' => $this->faker->unique()->safeEmail(),
-            'role' => $this->faker->randomElement(['admin', 'editor', 'viewer','writer']),
+            'role' => $this->faker->randomElement(['admin', 'owner','editor', 'viewer','writer']),
             'token' => Invitation::generateToken(),
             'expires_at' => now()->addDays(7), // Válida por 7 días
             'accepted_by_user_id' => null,
