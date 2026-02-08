@@ -18,7 +18,8 @@ return new class extends Migration
             $table->jsonb('branding_config');
             $table->jsonb('donation_config');
             $table->timestamps();
-            $table->index('slug');
+            $table->index('slug', 'idx_workspace_slug');
+            $table->index('created_at', 'idx_workspace_created_at');
         });
     }
 
