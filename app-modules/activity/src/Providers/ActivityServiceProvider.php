@@ -24,7 +24,7 @@ class ActivityServiceProvider extends ServiceProvider
     public function boot(): void
     {
         //  Cargar migraciones del módulo
-        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+        $this->loadMigrationsFrom(__DIR__ . '../../database/migrations');
 
         //  Lazy Loading Prevention (desarrollo)
         if ($this->app->environment('local')) {
