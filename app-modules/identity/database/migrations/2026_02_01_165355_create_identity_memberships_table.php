@@ -13,13 +13,19 @@ return new class extends Migration
     {
         Schema::create('identity_memberships', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('user_id');
-            $table->uuid('workspace_id');
+            $table->foreignUuid('user_id')
+                ->constrained('identity_users')
+                ->onDelete('cascade');
+            $table->foreignUuid('workspace_id')
+                ->constrained('identity_workspaces')
+                ->onDelete('cascade');
             $table->enum('role', ['owner', 'admin', 'editor', 'viewer', 'writer']);
             $table->timestamp('joined_at');
+            $table->timestamps();
             $table->unique(['user_id', 'workspace_id']);
-            $table->index('workspace_id');
-            $table->index('role');
+            $table->index('workspace_id', 'idx_membership_workspace_id');
+            $table->index('role', 'idx_membership_role');
+            $table->index(['user_id', 'role'], 'idx_membership_user_role');
         });
     }
 

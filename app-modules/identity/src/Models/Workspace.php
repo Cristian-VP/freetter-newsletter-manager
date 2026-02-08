@@ -4,7 +4,7 @@ namespace Domains\Identity\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-Use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Domains\Identity\Database\Factories\WorkspaceFactory;
 
 class Workspace extends Model
@@ -53,10 +53,16 @@ class Workspace extends Model
     // Helper: Obtener owner del workspace
     public function owner()
     {
-         return $this->memberships()
-                    ->where('role', 'owner')
-                    ->first()
-                    ?->user;
-    }
+        $ownerMembership = $this->memberships()
+        ->where('role', 'owner')
+        ->first();
 
+        if (!$ownerMembership) {
+            throw new \DomainException(
+                "Workspace {$this->id} must have an owner"
+            );
+        }
+
+        return $ownerMembership->user;
+    }
 }

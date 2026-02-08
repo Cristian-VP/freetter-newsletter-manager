@@ -13,14 +13,23 @@ return new class extends Migration
     {
         Schema::create('identity_invitations', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            $table->uuid('workspace_id');
+            //Foreign keys
+            $table->foreignUuid('workspace_id')
+                ->constrained('identity_workspaces')
+                ->onDelete('cascade');
+            $table->foreignUuid('accepted_by_user_id')
+                ->nullable()
+                ->constrained('identity_users')
+                ->onDelete('set null');
             $table->string('email', 255);
-            $table->enum('role', ['owner', 'admin', 'editor', 'viewer']);
+            $table->enum('role', ['admin', 'owner','editor', 'viewer','writer']);
             $table->string('token', 64)->unique();
             $table->timestamp('expires_at');
-            $table->uuid('accepted_by_user_id')->nullable();
-            $table->index('token');
-            $table->index('email');
+            $table->timestamp('accepted_at')->nullable();
+            $table->index('token', 'idx_invitation_token');
+            $table->index('email', 'idx_invitation_email');
+            $table->index('expires_at', 'idx_invitation_expires_at');
+            $table->index(['workspace_id', 'email'], 'idx_invitation_workspace_email');
         });
     }
 
