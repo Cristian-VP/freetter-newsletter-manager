@@ -2,8 +2,15 @@
 
 namespace Domains\Activity\Listeners;
 
+use Domains\Activity\Models\ActivityLog;
+use Domains\Identity\Events\UserRegistered;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
+
+/**
+ * Register the listener in EventServiceProvider,
+ * when the event UserRegistered is fired.
+ */
 
 class LogUserRegistered
 {
@@ -18,8 +25,22 @@ class LogUserRegistered
     /**
      * Handle the event.
      */
-    public function handle(object $event): void
+    public function handle(UserRegistered $event): void
     {
-        //
+        ActivityLog::created([
+            'user_id' => null,
+            'action' => 'user.registered',
+            'entity_type' => 'user',
+            'entity_id' => $event->user->id,
+            'metadata' => [
+                'name' => $event->user->name,
+                'email' => $event->user->email,
+                'context' => $event->user->email,
+            ],
+            'ip_address' => $event->context['ip'] ?? request()->ip(),
+            'user_agent' => $event->context['user_agent'] ?? request()->userAgent(),
+        ]
+
+        );
     }
 }

@@ -2,6 +2,8 @@
 
 namespace Domains\Activity\Listeners;
 
+use Domains\Activity\Models\ActivityLog;
+use Domains\Identity\Events\WorkspaceCreated;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Queue\InteractsWithQueue;
 
@@ -18,8 +20,19 @@ class LogWorkspaceCreated
     /**
      * Handle the event.
      */
-    public function handle(object $event): void
+    public function handle(WorkspaceCreated $event): void
     {
-        //
+        ActivityLog::created([
+            'user_id' => $event->ownerId,
+            'action' => 'workspace.created',
+            'entity_type' => 'workspace',
+            'entity_id' => $event->workspace->id,
+            'metadata' => [
+                'name' => $event->workspace->name,
+                'slug' => $event->workspace->slug,
+            ],
+            'ip_address' => $event->context['ip'] ?? request()->ip(),
+            'user_agent' => $event->context['user_agent'] ?? request()->userAgent(),
+        ]);
     }
 }
