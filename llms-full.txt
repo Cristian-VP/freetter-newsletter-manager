@@ -1,0 +1,216 @@
+# Freetter Full LLM Context
+
+This document is the deep operational context for coding agents working in this repository.
+It reflects both strategic intent (`.context/`) and current code reality.
+
+## 1) Project Identity
+
+- Name: Freetter
+- Stack: Laravel 12 (PHP 8.4), modular monolith under `app-modules/`
+- Goal: open-source newsletter platform with collaboration, no commission model, and carbon-awareness signals.
+- Strategy: MVP first, with progressive hardening and modular growth.
+
+High-level product goals extracted from `.context/FREETTER_PROJECT.md`:
+
+- passwordless auth (magic link)
+- workspace-based collaboration model
+- publishing with editor JSON content
+- audience/subscriber management
+- queued campaign delivery
+- activity auditing and traceability
+- environmental impact estimation per publication/delivery
+
+## 2) Sources Of Truth And Priority
+
+Use this order before implementing:
+
+1. `.context/PROJECT_ARCHITECTURE.md`
+2. `.context/USE_CASES.md`
+3. `.context/ENTITIES.md`
+4. `.context/DDD_EVENTS_ARCHITECTURE_ANALYSIS.md`
+5. `AGENTS.md` and `.github/copilot-instructions.md`
+6. Actual code (final truth for what currently runs)
+
+Important: `.context` defines intended architecture and business direction, but parts are ahead of implementation.
+
+## 3) Architecture Constraints
+
+From repo guidance and `.context`:
+
+- Keep ownership by domain module.
+- Avoid direct cross-domain coupling for side effects.
+- Prefer event/listener integration for cross-module reactions.
+- Keep changes minimal and focused.
+- Validate behavior with targeted tests.
+
+Agent workflow scope:
+
+- Development orchestration only in VS Code.
+- Standard chain: `freetter-planner` -> `freetter-implementer` -> `freetter-guardian` -> `freetter-release-manager`.
+  - **Planner**: Analyzes scope, boundaries, risks, and proposes implementation steps (no code written).
+  - **Implementer**: Executes the approved plan with minimal code changes, validates behavior using focused tests.
+  - **Guardian**: Reviews for regressions, architecture violations, test coverage gaps, and missing validations.
+  - **Release Manager**: Communicates readiness findings, risks, blockers, and unresolved concerns. Does NOT make the go/no-go decision; the user decides based on the report.
+- No runtime A2A infrastructure unless explicitly requested.
+
+## 4) Repository Layout
+
+- App shell: `app/`, `bootstrap/`, `config/`, `routes/`, `resources/`
+- Domain modules: `app-modules/{identity,publishing,audience,community,delivery,activity}`
+- Domain knowledge: `.context/*.md`
+- Agent and coding rules: `.github/`, `AGENTS.md`
+
+Composer setup:
+
+- Root `composer.json` uses path repositories (`app-modules/*`).
+- Module packages are installed as `domains/*` libraries.
+- Module service providers are declared in each module `composer.json` under `extra.laravel.providers`.
+
+## 5) Current Module Maturity (Code Reality)
+
+- `activity`: highest maturity, includes models, migrations, factory, tests (partial quality issues remain).
+- `identity`: core models/migrations/factories present, but integrity and consistency gaps exist.
+- `publishing`: has migrations/models but with multiple naming/FK/model inconsistencies.
+- `audience`, `community`, `delivery`: scaffolding only (providers/routes/tests placeholders, no real domain code).
+
+## 6) Verified Deficiencies And Gaps
+
+This section lists concrete mismatches observed in code, not just theoretical risks.
+
+### 6.1 Schema and Migration Mismatches
+
+- Table naming drift between docs and implementation.
+	- Docs usually describe plural tables (`publishing_posts`, `publishing_tags`, etc.).
+	- Current migrations often use singular names (`publishing_post`, `publishing_tag`, `publishing_post_version`).
+
+- `publishing` FK targets contain hard errors.
+	- `create_publishing_post_table.php` references `workspace` and `users` instead of identity tables.
+	- Other publishing migrations reference `identity_workspace` instead of `identity_workspaces`.
+
+- Pivot and drop-name defects in publishing migrations.
+	- `publishing__post_media` uses double underscore.
+	- `publishing_post_tag` migration drops `publishing__post_tag` in `down()`.
+	- `publishing_post_tag.tag_id` is `unsignedBigInteger` while tag PK is UUID.
+
+- `identity_invitations` vs model mismatch.
+	- Model/factory expects `accepted_at`.
+	- Migration does not include `accepted_at` column.
+
+- Role enum mismatch.
+	- Invitations factory/use cases include `writer`.
+	- `identity_invitations` migration enum excludes `writer`.
+
+### 6.2 Model Layer Inconsistencies
+
+- `Post` model does not align with migration columns/relations.
+	- `author()` uses `user_id` but schema field is `author_id`.
+	- `versions()` points to `PostVersions` while imports mention `PostVersion`.
+	- Tags relation uses `publishing__post_tags` (wrong pivot name).
+	- `UPDATED_AT = null` conflicts with migration `timestamps()`.
+	- Scope signatures/naming are inconsistent with Eloquent scope conventions.
+
+- `PostVersions`, `Media`, `Tag` models are empty placeholders.
+
+- Activity model immutability is documented but not fully enforced.
+	- `ActivityLog` sets `UPDATED_AT = null`, but update/delete guardrails are not enforced at model policy level.
+
+- `ActivityStream` and `ActivityAlert` set `UPDATED_AT = null` while migrations define `timestamps()`.
+
+### 6.3 Provider and Bootstrapping Issues
+
+- `ActivityServiceProvider` calls:
+	- `$this->loadMigrationsFrom(__DIR__ . '/../database/migrations');`
+	- From `src/Providers`, this path points to `src/database/migrations` (nonexistent).
+
+- Other module service providers are empty.
+	- No migration loading.
+	- No route loading.
+	- No domain wiring.
+
+- Module route files exist but are fully commented out.
+
+### 6.4 Factories and Tests
+
+- Typo file name: `app-modules/identity/database/factories/MemebershipFactory.php`
+	- Class is `MembershipFactory`.
+	- Filename/class mismatch is brittle under PSR-4 assumptions.
+
+- Tests are mostly placeholders.
+	- Many provider tests are TODO-only.
+	- There is little feature-level coverage for documented use cases.
+
+- Existing test depth is insufficient for module maturity claims in docs.
+
+### 6.5 Documentation Drift
+
+- `.context/GLOBAL_STRATEGY.md` claims states that no longer match repository reality.
+- README communicates MVP features that are not yet present in executable code.
+- `.context` sometimes references `Modules\...` naming while codebase uses `Domains\...`.
+
+## 7) AI Integration State
+
+Observed AI setup:
+
+- `laravel/ai` is installed (`^0.3.0`) and callable from tinker.
+- `config/ai.php` defaults:
+	- text/images/embeddings -> `gemini`
+	- audio/transcription -> `openai`
+	- reranking -> `cohere`
+
+Operational implication:
+
+- If only Gemini key is configured, non-Gemini operations may fail at runtime.
+- Provider choice must be explicit for multi-provider resilience.
+
+## 8) What Agents Should Do By Default
+
+When implementing any feature:
+
+1. Read `.context/PROJECT_ARCHITECTURE.md`, `.context/USE_CASES.md`, `.context/ENTITIES.md`.
+2. Verify current module code/migrations before trusting documentation claims.
+3. Use Laravel Boost docs/tooling for non-trivial Laravel decisions.
+4. Keep boundaries clean:
+	 - no direct side-effect coupling across modules
+	 - use events/listeners for cross-domain reactions
+5. Add focused tests for the changed behavior.
+6. Report architecture or schema drift explicitly in the PR/change summary.
+
+## 9) Suggested Stabilization Backlog (Priority Order)
+
+P0 (blocking correctness):
+
+- Normalize publishing table names/FKs and pivot key types.
+- Fix invitations schema/model/role mismatch.
+- Correct provider migration path and module provider boot behavior.
+- Ensure module routes are loaded only when implemented.
+
+P1 (foundation quality):
+
+- Align model relations/scopes with schema.
+- Remove placeholder model/service/test debt in implemented modules.
+- Add feature tests for Identity + Publishing + Activity happy-path/core failures.
+
+P2 (roadmap execution):
+
+- Implement Audience, Community, Delivery based on `.context/USE_CASES.md`.
+- Introduce event-driven cross-module integration for audit and delivery flows.
+
+## 10) Practical Notes For Future LLM Sessions
+
+- This repo contains strategic docs that are richer than implementation.
+- Always distinguish:
+	- "target architecture" (docs)
+	- "runtime reality" (code/migrations/tests)
+- If they differ, prefer small reconciliations with explicit migration/testing plans.
+
+## 11) Key Files To Read First
+
+- `.context/PROJECT_ARCHITECTURE.md`
+- `.context/USE_CASES.md`
+- `.context/ENTITIES.md`
+- `.context/DDD_EVENTS_ARCHITECTURE_ANALYSIS.md`
+- `AGENTS.md`
+- `.github/copilot-instructions.md`
+- `config/app-modules.php`
+- `config/ai.php`
+- `app-modules/*/composer.json`
