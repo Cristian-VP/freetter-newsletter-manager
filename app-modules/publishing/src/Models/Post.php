@@ -2,22 +2,22 @@
 
 namespace Domains\Publishing\Models;
 
-use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Builder;
 use Domains\Identity\Models\User;
 use Domains\Identity\Models\Workspace;
-use Domains\Publishing\Models\PostVersion;
-use Domains\Publishing\Models\Tag;
-use Domains\Publishing\Models\Media;
+use Domains\Publishing\Database\Factories\PostFactory;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
 class Post extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
-    protected $table = 'publishing_post';
-
-    public const UPDATED_AT = null;
+    protected $table = 'publishing_posts';
 
     protected $fillable = [
         'workspace_id',
@@ -36,90 +36,77 @@ class Post extends Model
         'published_at' => 'datetime',
     ];
 
-    //Ralationships
-    public function workspace()
+    protected static function newFactory(): PostFactory
+    {
+        return PostFactory::new();
+    }
+
+    public function workspace(): BelongsTo
     {
         return $this->belongsTo(Workspace::class, 'workspace_id');
     }
 
-    public function author()
+    public function author(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'user_id');
+        return $this->belongsTo(User::class, 'author_id');
     }
 
-    public function versions()
+    public function versions(): HasMany
     {
-        return $this->hasMany(PostVersions::class, 'post_id');
+        return $this->hasMany(PostVersion::class, 'post_id');
     }
 
-    public function tags()
+    public function tags(): BelongsToMany
     {
-        return $this->belongsToMany(Tag::class, 'publishing__post_tags', 'post_id', 'tag_id');
+        return $this->belongsToMany(Tag::class, 'publishing_post_tag', 'post_id', 'tag_id');
     }
 
-    public function media()
+    public function media(): BelongsToMany
     {
-        return $this->belongsToMany(Media::class, 'publishing__post_media', 'post_id', 'media_id');
+        return $this->belongsToMany(Media::class, 'publishing_post_media', 'post_id', 'media_id');
     }
 
-    /**
-     * Scope: Only post was published
-     */
-    public function ensureWasPublish(Builder $query): Builder
+    public function scopePublished(Builder $query): Builder
     {
         return $query
-        ->where('status', 'published')
-        ->whereNotNull('published_at')
-        ->where('published_at', '<=', now());
+            ->where('status', 'published')
+            ->whereNotNull('published_at')
+            ->where('published_at', '<=', now());
     }
 
-    /**
-     * Scope: Only post was published or scheduled
-     */
-    public function forWorkspace(Builder $query, string $id): Builder
+    public function scopeForWorkspace(Builder $query, string $workspaceId): Builder
     {
-        return $query->where(Workspace::qualifyColumn('id'), $id);
+        return $query->where('workspace_id', $workspaceId);
     }
 
-    /**
-     * Scope: Only post was published
-     */
-    public function onDraft(Builder $query): Builder
+    public function scopeDraft(Builder $query): Builder
     {
         return $query
-        ->where('status', 'draft')
-        ->whereNull('published_at');
+            ->where('status', 'draft')
+            ->whereNull('published_at');
     }
 
-    /**
-     * Scope: Only post was scheduled
-     */
-    public function onScheduled(Builder $query): Builder
+    public function scopeScheduled(Builder $query): Builder
     {
         return $query
-        ->where('status', 'scheduled')
-        ->where('published_at', '>', now());
+            ->where('status', 'scheduled')
+            ->where('published_at', '>', now());
     }
 
-    /**
-     * Scope: Ensure post type
-     */
-    public function ofType(string $type, Builder $query): Builder
+    public function scopeOfType(Builder $query, string $type): Builder
     {
         return $query->where('type', $type);
     }
 
-    //Helper methods
     public function shouldBeAutoPublished(): bool
     {
         return $this->status === 'scheduled'
-            && $this->published_at?->isPast()
-            && !$this->isPublished();
+            && $this->published_at?->isPast();
     }
 
     public function getStatus(): string
     {
-        return match($this->status) {
+        return match ($this->status) {
             'draft' => 'Borrador',
             'published' => 'Publicado',
             'scheduled' => "Programado para {$this->published_at->format('d/m/Y H:i')}",
@@ -129,19 +116,17 @@ class Post extends Model
 
     public function getExcerpt(int $maxLength = 160): string
     {
-        $excerpt = $this->excerpt
-            ?? $this->extractTextFromContent();
+        $excerpt = $this->excerpt ?? $this->extractTextFromContent();
 
         if (strlen($excerpt) <= $maxLength) {
             return $excerpt;
         }
 
-        return substr($excerpt, 0, $maxLength) . '...';
+        return substr($excerpt, 0, $maxLength).'...';
     }
 
     private function extractTextFromContent(): string
     {
-        // Extraer texto plano desde JSON del editor
         $text = collect($this->content['blocks'] ?? [])
             ->pluck('data.text')
             ->join(' ');

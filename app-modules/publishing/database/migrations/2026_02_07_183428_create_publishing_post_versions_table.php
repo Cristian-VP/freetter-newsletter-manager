@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('publishing_post_version', function (Blueprint $table) {
+        Schema::create('publishing_post_versions', function (Blueprint $table) {
             $table->uuid('id')->primary();
             // Foreign keys
             $table->foreignUuid('post_id')
-                ->constrained('publishing_post')
+                ->constrained('publishing_posts')
                 ->cascadeOnDelete()
                 ->comment('Reference to the original post');
             $table->jsonb('content');
@@ -37,6 +37,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('publishing_post_version');
+        Schema::dropIfExists('publishing_post_versions');
     }
 };

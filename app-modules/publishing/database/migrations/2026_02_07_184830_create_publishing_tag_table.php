@@ -11,11 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('publishing_tag', function (Blueprint $table) {
-             $table->uuid('id')->primary();
+        Schema::create('publishing_tags', function (Blueprint $table) {
+            $table->uuid('id')->primary();
             // Foreign keys
             $table->foreignUuid('workspace_id')
-                ->constrained('identity_workspace', 'id')
+                ->constrained('identity_workspaces', 'id')
                 ->cascadeOnDelete()
                 ->comment('Workspace to which the tag belongs');
             $table->string('name');
@@ -38,6 +38,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('publishing_tag');
+        Schema::dropIfExists('publishing_tags');
     }
 };

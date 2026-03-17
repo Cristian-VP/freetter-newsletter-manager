@@ -11,27 +11,27 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('publishing_post', function (Blueprint $table) {
+        Schema::create('publishing_posts', function (Blueprint $table) {
             $table->uuid('id')->primary();
             // Foreign keys
             $table->foreignUuid('workspace_id')
-                ->constrained('workspace')
+                ->constrained('identity_workspaces')
                 ->cascadeOnDelete()
                 ->comment('Workspace to which the post belongs');
             $table->foreignUuid('author_id')
-                ->constrained('users')
+                ->constrained('identity_users')
                 ->cascadeOnDelete()
                 ->comment('User who created the post');
             // Post details
             $table->string('title', 255);
             $table->string('slug', 255);
-            $table->enum('type', ['newsletter', 'post']);
+            $table->enum('type', ['newsletter', 'note']);
             $table->enum('status', ['draft', 'published', 'scheduled'])->index();
             $table->jsonb('content');
             $table->string('excerpt');
             $table->decimal('carbon_score', 8, 2)->default(0);
             $table->timestamp('published_at')
-                ->nullable(false)
+                ->nullable()
                 ->index();
             $table->timestamps();
             // Indexes
@@ -41,7 +41,7 @@ return new class extends Migration
             );
             $table->index(
                 ['workspace_id', 'status', 'published_at'],
-                 'idx_publishing_posts_published_feed'
+                'idx_publishing_posts_published_feed'
             );
             $table->unique(
                 ['workspace_id', 'slug'],
@@ -59,6 +59,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('publishing_post');
+        Schema::dropIfExists('publishing_posts');
     }
 };

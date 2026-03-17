@@ -15,7 +15,7 @@ return new class extends Migration
             $table->uuid('id')->primary();
             // Foreign keys
             $table->foreignUuid('workspace_id')
-                ->constrained('identity_workspace', 'id')
+                ->constrained('identity_workspaces', 'id')
                 ->cascadeOnDelete()
                 ->comment('Workspace to which the media belongs');
             // Media details

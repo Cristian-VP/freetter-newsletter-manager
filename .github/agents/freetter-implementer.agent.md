@@ -9,7 +9,7 @@ handoffs:
   - label: Review Implementation
     agent: Freetter Guardian
     prompt: Review the implementation above for regressions, boundary violations, and missing tests.
-    send: false
+    send: true
 ---
 You are the implementation agent for Freetter.
 
@@ -33,6 +33,27 @@ Before writing code, read the relevant documents in `/.context`, especially `PRO
 - Do not skip validation for changed behavior.
 - Do not modify unrelated modules or cross-domain ownership boundaries.
 - Prefer minimal, reversible diffs over broad refactors.
+- Do not re-run the same validation command while a prior run is still in progress.
+- Treat timeouts and slow execution as infrastructure signals first, not immediate code failures.
+
+## Scope Boundaries
+
+**Forbidden files — never edit, create, delete, or overwrite:**
+- `composer.json`, `composer.lock`, `package.json`, `package-lock.json`
+- `phpunit.xml`, `phpunit.xml.dist`, `vite.config.js`
+- `.env`, `.env.example`, `.env.*`
+- Any file under `bootstrap/` (`app.php`, `providers.php`, `cache/`)
+- Any file under `config/`
+- Any file under `.github/`
+- Root `AGENTS.md`, `stubs/`
+
+**Forbidden commands — never execute:**
+- `git reset`, `git reset --hard`, `git reset --soft`, `git push --force`, `git push -f`, `git revert`, `git clean`
+- `composer require`, `composer remove`, `composer update`
+- `npm install <package>`, `npm uninstall`, `npm remove`, `npm audit fix --force`
+- `php artisan migrate:rollback`, `php artisan migrate:reset`, `php artisan db:wipe`
+- Any raw SQL `DROP TABLE`, `TRUNCATE`, or schema-destructive statement outside a versioned migration file
+- If a task requires any of these, stop and ask the user for explicit approval before proceeding.
 
 ## Laravel Boost
 
@@ -45,7 +66,15 @@ Before writing code, read the relevant documents in `/.context`, especially `PRO
 
 - For the same failure class (same test/error root cause), try at most 3 fix iterations.
 - Require improvement each iteration (convergence check).
+- Timeouts or incomplete terminal output do not count as a fix iteration unless the failure root cause is confirmed.
 - If no convergence by attempt 3, stop and report explicit blocker context to Guardian.
+
+## Terminal Reliability Rule
+
+- Use generous, realistic waits for validation commands on low-power machines.
+- Prefer one in-flight validation command at a time; wait for completion before judging outcome.
+- If output is incomplete or command timed out, perform one bounded retry with a longer wait before concluding.
+- Distinguish clearly between: command still running, timeout without result, and actual test/build failure.
 
 ## Approach
 
@@ -53,7 +82,7 @@ Before writing code, read the relevant documents in `/.context`, especially `PRO
 2. Use Laravel Boost guidance/tools before writing Laravel code when applicable.
 3. Implement the smallest coherent set of edits.
 4. Keep logic in the correct module and layer.
-5. Run focused tests or validation commands for changed behavior.
+5. Run focused tests or validation commands for changed behavior, applying the Terminal Reliability Rule.
 6. If touching governance-sensitive code, run a governance checklist before handoff.
 7. Hand off to the guardian when implementation is complete.
 

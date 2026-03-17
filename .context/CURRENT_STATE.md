@@ -2,9 +2,30 @@
 
 ## Fecha de corte
 
-16 de marzo de 2026.
+17 de marzo de 2026.
 
 Este documento describe el estado real del repositorio hoy: avance funcional, brechas tecnicas y prioridades inmediatas.
+
+## 0. Actualizacion Incremental (17-03-2026)
+
+- fecha: 17 de marzo de 2026
+- que cambio realmente en codigo:
+	- se completo la implementacion del modulo `publishing` en capa de persistencia y validacion focalizada
+	- modelos corregidos/completados: `Post`, `PostVersion`, `Tag`, `Media`
+	- provider actualizado: `PublishingServiceProvider` ahora registra migraciones del modulo
+	- factories creadas: `PostFactory`, `PostVersionFactory`, `TagFactory`, `MediaFactory`
+	- tests de publishing implementados: provider + modelos (`Post`, `Tag`, `PostVersion`, `Media`)
+- validacion ejecutada:
+	- `vendor/bin/pint --dirty --format agent` -> pass
+	- `php artisan test --compact app-modules/publishing/tests/Feature/Models/PostVersionTest.php app-modules/publishing/tests/Feature/Models/MediaTest.php` -> 5 passed (6 assertions)
+	- `php artisan test --compact app-modules/publishing/tests/Feature/Providers/PublishingServiceProviderTest.php app-modules/publishing/tests/Feature/Models/PostTest.php app-modules/publishing/tests/Feature/Models/TagTest.php` -> 11 passed (15 assertions)
+- que riesgos se cerraron:
+	- cierre de bugs de integridad en `publishing` (naming de tabla, FKs, pivots, scopes, class rename `PostVersion`)
+	- cierre del gap de bootstrapping de migraciones en `publishing`
+	- cierre de tests `TODO` del provider de `publishing` y cobertura funcional minima de modelos/factories
+- que riesgos nuevos aparecieron:
+	- no se detectaron riesgos nuevos bloqueantes para `publishing`
+	- cobertura aun enfocada a capa de persistencia; quedan pendientes pruebas de casos limite e integracion HTTP cuando entren controladores/casos de uso
 
 ## 1. Resumen Ejecutivo
 
