@@ -4,6 +4,7 @@ namespace Domains\Activity\Tests\Feature\Providers;
 
 use Domains\Activity\Providers\ActivityServiceProvider;
 use Tests\TestCase;
+use Illuminate\Database\Eloquent\Model;
 
 class ActivityServiceProviderTest extends TestCase
 {
@@ -23,3 +24,4 @@ class ActivityServiceProviderTest extends TestCase
         $this->assertContains($expectedPath, $paths);
     }
 }
+

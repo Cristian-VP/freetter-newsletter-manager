@@ -4,17 +4,16 @@ namespace Domains\Identity\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Domains\Identity\Models\User;
 use Domains\Identity\Models\Workspace;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Domains\Identity\Database\Factories\MembershipFactory;
+
 class Membership extends Model
 {
     use HasUuids, HasFactory;
 
     protected $table = 'identity_memberships';
-
-    public $timestamps = false; // Asumimos que no hay timestamps en esta tabla
 
     protected $fillable = [
         'user_id',
