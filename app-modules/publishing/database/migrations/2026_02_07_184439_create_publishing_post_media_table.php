@@ -11,9 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('publishing__post_media', function (Blueprint $table) {
+        Schema::create('publishing_post_media', function (Blueprint $table) {
             $table->foreignUuid('post_id')
-                ->constrained('publishing_post', 'id')
+                ->constrained('publishing_posts', 'id')
                 ->cascadeOnDelete()
                 ->comment('Reference to the post');
             $table->foreignUuid('media_id')
@@ -27,7 +27,7 @@ return new class extends Migration
 
             // Indexes
             $table->index('media_id',
-            'idx_publishing_post_media_media'
+                'idx_publishing_post_media_media'
             );
         });
     }
@@ -37,6 +37,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('publishing__post_media');
+        Schema::dropIfExists('publishing_post_media');
     }
 };

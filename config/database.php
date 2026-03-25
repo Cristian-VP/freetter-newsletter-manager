@@ -82,11 +82,10 @@ return [
         //         (PHP_VERSION_ID >= 80500 ? \Pdo\Mysql::ATTR_SSL_CA : \PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
         //     ]) : [],
         // ],
-        // TODO declare DB_URL
         'pgsql' => [
             'driver' => 'pgsql',
             'url' => env('DB_URL'),
-            'host' => env('DB_HOST'),
+            'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '5432'),
             'database' => env('DB_DATABASE', 'freetter'),
             'username' => env('DB_USERNAME', 'root'),
@@ -94,7 +93,21 @@ return [
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,
-            'search_path' => 'public',
+            'search_path' => env('DB_SCHEMA', 'public'),
+            'sslmode' => env('DB_SSLMODE', 'prefer'),
+        ],
+
+        'pgsql_migration' => [
+            'driver' => 'pgsql',
+            'host' => env('DB_MIGRATION_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('DB_MIGRATION_PORT', env('DB_PORT', '5432')),
+            'database' => env('DB_MIGRATION_DATABASE', env('DB_DATABASE', 'freetter')),
+            'username' => env('DB_MIGRATION_USERNAME', env('DB_USERNAME', 'root')),
+            'password' => env('DB_MIGRATION_PASSWORD', env('DB_PASSWORD', '')),
+            'charset' => env('DB_CHARSET', 'utf8'),
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'search_path' => env('DB_SCHEMA', 'public'),
             'sslmode' => env('DB_SSLMODE', 'prefer'),
         ],
 

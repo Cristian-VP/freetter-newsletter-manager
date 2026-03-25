@@ -13,12 +13,10 @@ return new class extends Migration
     {
         Schema::create('publishing_post_tag', function (Blueprint $table) {
             $table->foreignUuid('post_id')
-                ->constrained('publishing_post', 'id')
+                ->constrained('publishing_posts', 'id')
                 ->cascadeOnDelete()
                 ->comment('Reference to the post');
-            $table->unsignedBigInteger('tag_id')
-                ->constrained('publishing_tag', 'id')
-                ->cascadeOnDelete()
+            $table->uuid('tag_id')
                 ->comment('Reference to the tag');
             $table->primary(
                 ['post_id', 'tag_id'],
@@ -27,7 +25,7 @@ return new class extends Migration
 
             // Indexes
             $table->index('tag_id',
-            'idx_publishing_post_tag_tag'
+                'idx_publishing_post_tag_tag'
             );
         });
     }
@@ -37,6 +35,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('publishing__post_tag');
+        Schema::dropIfExists('publishing_post_tag');
     }
 };
