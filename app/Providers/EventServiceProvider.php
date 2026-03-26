@@ -2,23 +2,23 @@
 
 namespace App\Providers;
 
-use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
-
+use Domains\Activity\Listeners\LogMembershipCreated;
 // ─────────────────────────────────────────────────────────────────
 // EVENTS de Identity
 // ─────────────────────────────────────────────────────────────────
-use Domains\Identity\Events\UserRegistered;
-use Domains\Identity\Events\UserEmailVerified;
-use Domains\Identity\Events\WorkspaceCreated;
+use Domains\Activity\Listeners\LogPostPublished;
+use Domains\Activity\Listeners\LogUserEmailVerified;
+use Domains\Activity\Listeners\LogUserRegistered;
+use Domains\Activity\Listeners\LogWorkspaceCreated;
 use Domains\Identity\Events\MembershipCreated;
-
 // ─────────────────────────────────────────────────────────────────
 // LISTENERS de Activity
 // ─────────────────────────────────────────────────────────────────
-use Domains\Activity\Listeners\LogUserRegistered;
-use Domains\Activity\Listeners\LogUserEmailVerified;
-use Domains\Activity\Listeners\LogWorkspaceCreated;
-use Domains\Activity\Listeners\LogMembershipCreated;
+use Domains\Identity\Events\UserEmailVerified;
+use Domains\Identity\Events\UserRegistered;
+use Domains\Identity\Events\WorkspaceCreated;
+use Domains\Publishing\Events\PostPublished;
+use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 /**
  * EventServiceProvider: Configuración central de eventos
@@ -62,6 +62,10 @@ class EventServiceProvider extends ServiceProvider
             LogMembershipCreated::class,   // Activity: registrar membresía
             // Futuro: NotifyWorkspaceOwner::class,
             // Futuro: SendMemberWelcome::class,
+        ],
+
+        PostPublished::class => [
+            LogPostPublished::class,
         ],
     ];
 

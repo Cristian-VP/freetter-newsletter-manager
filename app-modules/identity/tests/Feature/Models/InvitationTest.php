@@ -3,12 +3,13 @@
 namespace Domains\Identity\Tests\Feature\Models;
 
 use Domains\Identity\Models\Invitation;
-use Domains\Identity\Models\Workspace;
-use Domains\Identity\Models\User;
 use Domains\Identity\Models\Membership;
+use Domains\Identity\Models\User;
+use Domains\Identity\Models\Workspace;
 use Illuminate\Database\Eloquent\Model;
-use Tests\TestCase;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class InvitationTest extends TestCase
 {
@@ -53,7 +54,7 @@ class InvitationTest extends TestCase
             'token' => $token,
         ]);
 
-        $this->expectException(\Illuminate\Database\UniqueConstraintViolationException::class);
+        $this->expectException(UniqueConstraintViolationException::class);
 
         Invitation::factory()->create([
             'token' => $token,
@@ -198,11 +199,11 @@ class InvitationTest extends TestCase
     /**
      * Test: Invitación puede tener rol viewer
      */
-    public function test_invitation_can_have_viewer_role(): void
+    public function test_invitation_can_have_writer_role(): void
     {
-        $invitation = Invitation::factory()->viewer()->create();
+        $invitation = Invitation::factory()->writer()->create();
 
-        $this->assertEquals('viewer', $invitation->role);
+        $this->assertEquals('writer', $invitation->role);
     }
 
     /**
@@ -256,7 +257,7 @@ class InvitationTest extends TestCase
      */
     public function test_invitation_with_specific_token(): void
     {
-        $token = 'custom-token-' . Invitation::generateToken();
+        $token = 'custom-token-'.Invitation::generateToken();
 
         $invitation = Invitation::factory()
             ->withToken($token)
@@ -332,12 +333,12 @@ class InvitationTest extends TestCase
         Model::preventLazyLoading(true);
 
         try {
-             $invitations = Invitation::with('workspace', 'acceptedByUser')->get();
-             foreach ($invitations as $invitation) {
-                 $invitation->workspace->name;
-                 $invitation->acceptedByUser?->name;
-             }
-             $this->assertTrue(true); // Si llegamos aquí, no hubo N+1
+            $invitations = Invitation::with('workspace', 'acceptedByUser')->get();
+            foreach ($invitations as $invitation) {
+                $invitation->workspace->name;
+                $invitation->acceptedByUser?->name;
+            }
+            $this->assertTrue(true); // Si llegamos aquí, no hubo N+1
         } finally {
             Model::preventLazyLoading(false);
         }
