@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('identity_invitations', function (Blueprint $table) {
             $table->uuid('id')->primary();
-            //Foreign keys
+            // Foreign keys
             $table->foreignUuid('workspace_id')
                 ->constrained('identity_workspaces')
                 ->onDelete('cascade');
@@ -22,7 +22,7 @@ return new class extends Migration
                 ->constrained('identity_users')
                 ->onDelete('set null');
             $table->string('email', 255);
-            $table->enum('role', ['admin', 'owner','editor', 'viewer','writer']);
+            $table->enum('role', ['admin', 'editor', 'writer']);
             $table->string('token', 64)->unique();
             $table->timestamp('expires_at');
             $table->timestamp('accepted_at')->nullable();

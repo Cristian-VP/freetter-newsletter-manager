@@ -6,43 +6,39 @@
 
 Este documento describe el estado real del repositorio hoy: avance funcional, brechas tecnicas y prioridades inmediatas.
 
-## 0. Actualizacion Incremental (17-03-2026)
+## 0. Actualización Incremental (25-03-2026)
 
-- fecha: 17 de marzo de 2026
-- que cambio realmente en codigo:
-	- se completo la implementacion del modulo `publishing` en capa de persistencia y validacion focalizada
-	- modelos corregidos/completados: `Post`, `PostVersion`, `Tag`, `Media`
-	- provider actualizado: `PublishingServiceProvider` ahora registra migraciones del modulo
-	- factories creadas: `PostFactory`, `PostVersionFactory`, `TagFactory`, `MediaFactory`
-	- tests de publishing implementados: provider + modelos (`Post`, `Tag`, `PostVersion`, `Media`)
-- validacion ejecutada:
-	- `vendor/bin/pint --dirty --format agent` -> pass
-	- `php artisan test --compact app-modules/publishing/tests/Feature/Models/PostVersionTest.php app-modules/publishing/tests/Feature/Models/MediaTest.php` -> 5 passed (6 assertions)
-	- `php artisan test --compact app-modules/publishing/tests/Feature/Providers/PublishingServiceProviderTest.php app-modules/publishing/tests/Feature/Models/PostTest.php app-modules/publishing/tests/Feature/Models/TagTest.php` -> 11 passed (15 assertions)
-- que riesgos se cerraron:
-	- cierre de bugs de integridad en `publishing` (naming de tabla, FKs, pivots, scopes, class rename `PostVersion`)
-	- cierre del gap de bootstrapping de migraciones en `publishing`
-	- cierre de tests `TODO` del provider de `publishing` y cobertura funcional minima de modelos/factories
-- que riesgos nuevos aparecieron:
-	- no se detectaron riesgos nuevos bloqueantes para `publishing`
-	- cobertura aun enfocada a capa de persistencia; quedan pendientes pruebas de casos limite e integracion HTTP cuando entren controladores/casos de uso
+- fecha: 25 de marzo de 2026
+- qué cambió realmente en código:
+    - Se corrigió un error de autenticación en `WorkspaceObserver` (ahora usa el facade Auth compatible con análisis estático).
+    - Se validó la cobertura de tests HTTP y de integración para los flujos de creación de workspace e invitaciones.
+    - Se confirmó que no hay regresiones ni violaciones de límites de módulo tras la corrección.
+- validación ejecutada:
+    - `vendor/bin/pint --dirty --format agent` -> pass
+    - `php artisan test --compact app-modules/identity/tests/Feature/Http/WorkspaceAndInvitationControllerTest.php` -> 2 pasaron (6 assertions)
+    - Revisión manual de readiness y cobertura.
+- qué riesgos se cerraron:
+    - Se eliminó el riesgo de regresión por error de autenticación en el observer.
+    - Se confirma readiness para release sin blockers.
+- qué riesgos nuevos aparecieron:
+    - Permanece un warning menor por un test de integración no relacionado (`IdentityActivityEventsIntegrationTest`).
 
 ## 1. Resumen Ejecutivo
 
-Freetter tiene direccion de producto y arquitectura bien definida en `.context`, pero la implementacion esta incompleta y heterogenea entre modulos.
+Freetter tiene dirección de producto y arquitectura bien definida en `.context`, pero la implementación está incompleta y heterogénea entre módulos.
 
 Estado general:
 
-- `activity`: modulo mas avanzado, aun con inconsistencias de hardening
+- `activity`: módulo más avanzado, aun con inconsistencias de hardening
 - `identity`: base funcional parcial con desajustes entre migraciones, modelos y factories
 - `publishing`: estructura inicial creada, con errores de integridad en esquema y relaciones
 - `audience`, `community`, `delivery`: fase de scaffolding
 
 ## 2. Inventario Objetivo Por Modulo
 
-Conteo de artefactos en codigo (no implica calidad ni completitud):
+Conteo de artefactos en código (no implica calidad ni completitud):
 
-| Modulo | Migraciones | Modelos | Providers | Archivos de rutas | Tests |
+| Módulo | Migraciones | Modelos | Providers | Archivos de rutas | Tests |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | `identity` | 4 | 4 | 1 | 1 | 1 |
 | `publishing` | 6 | 4 | 1 | 1 | 1 |
@@ -53,10 +49,10 @@ Conteo de artefactos en codigo (no implica calidad ni completitud):
 
 Otros indicadores:
 
-- controladores de modulo: `0`
+- controladores de módulo: `0`
 - tests en `tests/` raiz: `2`
 
-## 3. Hallazgos Criticos Actuales
+## 3. Hallazgos Críticos Actuales
 
 ### 3.1 Esquema y persistencia
 
@@ -64,27 +60,27 @@ Otros indicadores:
 - en `publishing` hay FKs apuntando a tablas incorrectas (`workspace`, `users`, `identity_workspace`)
 - pivots de `publishing` con defectos de naming y tipo (`publishing__post_media`, `tag_id` bigint contra PK uuid)
 - `identity_invitations` no tiene `accepted_at`, pero `Invitation` y su factory si lo usan
-- rol `writer` esta en use cases/factories pero no en enum de `identity_invitations`
+- rol `writer` está en use cases/factories pero no en enum de `identity_invitations`
 
-### 3.2 Bootstrapping de modulos
+### 3.2 Bootstrapping de módulos
 
 - solo `ActivityServiceProvider` intenta cargar migraciones, con ruta incorrecta
-- providers de `identity`, `publishing`, `audience`, `community`, `delivery` estan vacios
-- todos los archivos de rutas de modulo estan comentados
+- providers de `identity`, `publishing`, `audience`, `community`, `delivery` están vacíos
+- todos los archivos de rutas de módulo están comentados
 
-### 3.3 Capa de aplicacion y HTTP
+### 3.3 Capa de aplicación y HTTP
 
 - no hay controladores en `app-modules/*/src/Http/Controllers`
 - predominan placeholders y clases sin casos de uso aplicados
 
 ### 3.4 Calidad y pruebas
 
-- tests de providers en todos los modulos estan en `TODO`
+- tests de providers en todos los módulos están en `TODO`
 - cobertura orientada a casos de uso es insuficiente para el alcance documentado
 
 ## 4. Estado De La Integracion AI
 
-- `laravel/ai` esta instalado y funcional a nivel SDK
+- `laravel/ai` está instalado y funcional a nivel SDK
 - proveedor por defecto en `config/ai.php`: `gemini`
 - audio/transcripcion/reranking apuntan a `openai` y `cohere`; requieren credenciales activas para funcionar en runtime
 

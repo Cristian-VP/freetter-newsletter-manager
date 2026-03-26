@@ -12,7 +12,7 @@ class InvitationAlignmentTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_writer_and_viewer_roles_can_be_persisted(): void
+    public function test_writer_and_editor_roles_can_be_persisted(): void
     {
         $workspace = Workspace::factory()->create();
 
@@ -21,9 +21,9 @@ class InvitationAlignmentTest extends TestCase
             ->writer()
             ->create();
 
-        $viewerInvitation = Invitation::factory()
+        $editorInvitation = Invitation::factory()
             ->forWorkspace($workspace)
-            ->viewer()
+            ->editor()
             ->create();
 
         $this->assertDatabaseHas('identity_invitations', [
@@ -32,8 +32,8 @@ class InvitationAlignmentTest extends TestCase
         ]);
 
         $this->assertDatabaseHas('identity_invitations', [
-            'id' => $viewerInvitation->id,
-            'role' => 'viewer',
+            'id' => $editorInvitation->id,
+            'role' => 'editor',
         ]);
     }
 
@@ -44,7 +44,7 @@ class InvitationAlignmentTest extends TestCase
 
         $invitation = Invitation::factory()
             ->forWorkspace($workspace)
-            ->viewer()
+            ->editor()
             ->create([
                 'accepted_by_user_id' => null,
                 'accepted_at' => null,
