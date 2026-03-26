@@ -2,13 +2,13 @@
 
 namespace Domains\Identity\Providers;
 
-use Illuminate\Support\ServiceProvider;
+use Domains\Identity\Models\Membership;
 use Domains\Identity\Models\User;
 use Domains\Identity\Models\Workspace;
-use Domains\Identity\Models\Membership;
+use Domains\Identity\Observers\MembershipObserver;
 use Domains\Identity\Observers\UserObserver;
 use Domains\Identity\Observers\WorkspaceObserver;
-use Domains\Identity\Observers\MembershipObserver;
+use Illuminate\Support\ServiceProvider;
 
 class IdentityServiceProvider extends ServiceProvider
 {
@@ -20,7 +20,6 @@ class IdentityServiceProvider extends ServiceProvider
         // Aquí se registran bindings, singletons, etc
         // Por ahora, Identity no necesita nada aquí
     }
-            
 
     public function boot(): void
     {
@@ -30,5 +29,6 @@ class IdentityServiceProvider extends ServiceProvider
         Membership::observe(MembershipObserver::class);
 
         $this->loadMigrationsFrom(__DIR__.'/../../database/migrations');
+        $this->loadRoutesFrom(__DIR__.'/../../routes/identity-routes.php');
     }
 }

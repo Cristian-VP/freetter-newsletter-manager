@@ -10,6 +10,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
         DB::statement('ALTER TABLE identity_memberships DROP CONSTRAINT IF EXISTS identity_memberships_user_id_foreign');
         DB::statement('ALTER TABLE identity_memberships DROP CONSTRAINT IF EXISTS identity_memberships_workspace_id_foreign');
         DB::statement('ALTER TABLE identity_invitations DROP CONSTRAINT IF EXISTS identity_invitations_workspace_id_foreign');
@@ -26,6 +30,10 @@ return new class extends Migration
      */
     public function down(): void
     {
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
         DB::statement('ALTER TABLE identity_memberships DROP CONSTRAINT IF EXISTS identity_memberships_user_id_foreign');
         DB::statement('ALTER TABLE identity_memberships DROP CONSTRAINT IF EXISTS identity_memberships_workspace_id_foreign');
         DB::statement('ALTER TABLE identity_invitations DROP CONSTRAINT IF EXISTS identity_invitations_workspace_id_foreign');

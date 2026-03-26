@@ -18,8 +18,12 @@ return new class extends Migration
             });
         }
 
+        if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
         DB::statement('ALTER TABLE identity_invitations DROP CONSTRAINT IF EXISTS identity_invitations_role_check');
-        DB::statement("ALTER TABLE identity_invitations ADD CONSTRAINT identity_invitations_role_check CHECK (role IN ('owner', 'admin', 'editor', 'viewer', 'writer'))");
+        DB::statement("ALTER TABLE identity_invitations ADD CONSTRAINT identity_invitations_role_check CHECK (role IN ('admin', 'editor', 'writer'))");
     }
 
     /**
@@ -27,9 +31,19 @@ return new class extends Migration
      */
     public function down(): void
     {
-        DB::statement("UPDATE identity_invitations SET role = 'viewer' WHERE role = 'writer'");
+        if (DB::getDriverName() !== 'pgsql') {
+            if (Schema::hasColumn('identity_invitations', 'accepted_at')) {
+                Schema::table('identity_invitations', function (Blueprint $table) {
+                    $table->dropColumn('accepted_at');
+                });
+            }
+
+            return;
+        }
+
+        DB::statement("UPDATE identity_invitations SET role = 'editor' WHERE role = 'writer'");
         DB::statement('ALTER TABLE identity_invitations DROP CONSTRAINT IF EXISTS identity_invitations_role_check');
-        DB::statement("ALTER TABLE identity_invitations ADD CONSTRAINT identity_invitations_role_check CHECK (role IN ('owner', 'admin', 'editor', 'viewer'))");
+        DB::statement("ALTER TABLE identity_invitations ADD CONSTRAINT identity_invitations_role_check CHECK (role IN ('admin', 'editor'))");
 
         if (Schema::hasColumn('identity_invitations', 'accepted_at')) {
             Schema::table('identity_invitations', function (Blueprint $table) {

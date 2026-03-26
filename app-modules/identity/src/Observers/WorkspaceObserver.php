@@ -2,8 +2,9 @@
 
 namespace Domains\Identity\Observers;
 
-use Domains\Identity\Models\Workspace;
 use Domains\Identity\Events\WorkspaceCreated;
+use Domains\Identity\Models\Workspace;
+use Illuminate\Support\Facades\Auth;
 
 class WorkspaceObserver
 {
@@ -15,7 +16,7 @@ class WorkspaceObserver
         // Disparar evento WorkspaceCreated
         event(new WorkspaceCreated(
             workspace: $workspace,
-            ownerId: auth()->id()
+            ownerId: Auth::id()
         ));
     }
 

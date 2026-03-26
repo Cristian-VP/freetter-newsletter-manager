@@ -1,11 +1,11 @@
 <?php
 
-// use Domains\Identity\Http\Controllers\IdentityController;
+use Domains\Identity\Http\Controllers\InvitationController;
+use Domains\Identity\Http\Controllers\WorkspaceController;
+use Illuminate\Support\Facades\Route;
 
-// Route::get('/identities', [IdentityController::class, 'index'])->name('identities.index');
-// Route::get('/identities/create', [IdentityController::class, 'create'])->name('identities.create');
-// Route::post('/identities', [IdentityController::class, 'store'])->name('identities.store');
-// Route::get('/identities/{identity}', [IdentityController::class, 'show'])->name('identities.show');
-// Route::get('/identities/{identity}/edit', [IdentityController::class, 'edit'])->name('identities.edit');
-// Route::put('/identities/{identity}', [IdentityController::class, 'update'])->name('identities.update');
-// Route::delete('/identities/{identity}', [IdentityController::class, 'destroy'])->name('identities.destroy');
+Route::prefix('identity')->name('identity.')->group(function (): void {
+    Route::post('/workspaces', [WorkspaceController::class, 'store'])->name('workspaces.store');
+    Route::post('/workspaces/{workspace}/invitations', [InvitationController::class, 'store'])
+        ->name('workspaces.invitations.store');
+});
