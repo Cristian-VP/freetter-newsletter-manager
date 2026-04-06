@@ -59,6 +59,22 @@ Este documento describe el estado real del repositorio hoy: avance funcional, br
 - qué riesgos nuevos aparecieron:
     - Ninguno relevante para Delivery en este release.
 
+## 0.3. Actualización Incremental (06-04-2026)
+- fecha: 6 de abril de 2026
+- qué cambió realmente en código:
+    - Implementación completa del MVP del módulo Community: migraciones (`community_comments`, `community_likes`, `community_followers`), modelos, factories, eventos de dominio, controladores HTTP, FormRequests, rutas y autorización de moderación por rol.
+    - Integración event-driven entre Community y Activity mediante listeners registrados en el `EventServiceProvider` central.
+    - Soporte de threading básico en comentarios (`parent_id`), unicidad de likes y follows por constraints de base de datos y moderación trazable (hide/soft-delete).
+    - Cobertura de pruebas de Community para casos HTTP, dispatch de eventos e integración con `activity_logs`.
+- validación ejecutada:
+    - `vendor/bin/pint --dirty --format agent` -> pass
+    - `php artisan test --compact app-modules/community/tests` -> 10 pasaron (33 assertions)
+- qué riesgos se cerraron:
+    - Se elimina el riesgo de que `community` permanezca en scaffolding sin casos de uso operativos.
+    - Se confirma integración con Activity sin acoplamiento de side effects cross-module.
+- qué riesgos nuevos aparecieron:
+    - Ninguno relevante para Community en este release.
+
 ## 1. Resumen Ejecutivo
 
 Freetter tiene dirección de producto y arquitectura bien definida en `.context`, pero la implementación está incompleta y heterogénea entre módulos.
@@ -68,7 +84,7 @@ Estado general:
 - `activity`: módulo más avanzado, aun con inconsistencias de hardening
 - `identity`: base funcional parcial con desajustes entre migraciones, modelos y factories
 - `publishing`: estructura inicial creada, con errores de integridad en esquema y relaciones
-- `audience`, `community`, `delivery`: fase de scaffolding
+- `audience`, `delivery`, `community`: MVP implementado con integración por eventos
 
 ## 2. Inventario Objetivo Por Modulo
 
