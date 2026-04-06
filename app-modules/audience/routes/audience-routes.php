@@ -1,11 +1,15 @@
 <?php
 
-// use Domains\Audience\Http\Controllers\AudienceController;
+use Domains\Audience\Http\Controllers\ImportJobController;
+use Domains\Audience\Http\Controllers\SubscriberController;
+use Illuminate\Support\Facades\Route;
 
-// Route::get('/audiences', [AudienceController::class, 'index'])->name('audiences.index');
-// Route::get('/audiences/create', [AudienceController::class, 'create'])->name('audiences.create');
-// Route::post('/audiences', [AudienceController::class, 'store'])->name('audiences.store');
-// Route::get('/audiences/{audience}', [AudienceController::class, 'show'])->name('audiences.show');
-// Route::get('/audiences/{audience}/edit', [AudienceController::class, 'edit'])->name('audiences.edit');
-// Route::put('/audiences/{audience}', [AudienceController::class, 'update'])->name('audiences.update');
-// Route::delete('/audiences/{audience}', [AudienceController::class, 'destroy'])->name('audiences.destroy');
+Route::prefix('audience')->name('audience.')->group(function (): void {
+    Route::post('/workspaces/{workspace}/subscribe', [SubscriberController::class, 'subscribe'])
+        ->name('workspaces.subscribe');
+    Route::get('/unsubscribe/{token}', [SubscriberController::class, 'unsubscribe'])
+        ->name('unsubscribe');
+
+    Route::post('/workspaces/{workspace}/imports', [ImportJobController::class, 'store'])
+        ->name('workspaces.imports.store');
+});

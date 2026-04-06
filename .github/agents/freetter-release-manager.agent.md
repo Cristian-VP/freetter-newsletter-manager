@@ -2,7 +2,7 @@
 name: Freetter Release Manager
 description: "Communicate Freetter change readiness with explicit findings, risks, and validation gaps. Summarizes scope, validation status, and unresolved concerns to inform user decision."
 model: GPT-4.1
-tools: [read, search, todo]
+tools: [read, search, todo, edit]
 agents: []
 user-invocable: true
 ---
