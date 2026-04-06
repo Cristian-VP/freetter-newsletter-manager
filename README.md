@@ -43,6 +43,26 @@ El proyecto se desarrolla como un **Monolito Modular**, una elección sólida pa
 *   **Server-Side First con Inertia**: Laravel gestiona routing y estado principal; Inertia inyecta datos a componentes React, simplificando seguridad y lógica.
 *   **Mitigación de Picos de Envío**: las colas de Redis se configuran con throttling (por ejemplo, 60 envíos/minuto) para evitar el rate limiting del proveedor de email. El procesamiento masivo de suscriptores se realiza mediante `cursor()` y chunks para reducir el uso de memoria.
 
+## Flujo Delivery MVP
+
+El flujo de envío implementado en MVP es event-driven entre dominios:
+
+1. Publishing emite `PostPublished` al publicar un post `type = newsletter`.
+2. Delivery escucha el evento y crea `delivery_campaigns` con estado `queued`.
+3. Delivery encola `SendCampaignJob` para enviar a suscriptores activos del workspace.
+4. Delivery actualiza `stats` y emite eventos de campaña (`created`, `sending_started`, `completed`).
+5. Activity registra auditoría de esos eventos sin acoplamiento directo desde Publishing.
+6. Delivery recibe webhooks de bounce en `/delivery/webhooks/bounces` y guarda `delivery_bounces`.
+7. Audience escucha `DeliveryBounceReceived` y marca al suscriptor como `bounced`.
+
+### Endpoints MVP Delivery
+
+- `GET /delivery/campaigns/{workspace}`
+- `POST /delivery/campaigns/{workspace}/send`
+	- body JSON: `{ "campaign_id": "uuid" }`
+- `POST /delivery/webhooks/bounces`
+	- body JSON: `{ "workspace_id": "uuid", "campaign_id": "uuid|null", "email": "user@example.com", "bounce_type": "hard|soft|complaint", "code": "550", "reason": "mailbox not found" }`
+
 ---
 
 ## Guía de Instalación Rápida (Getting Started)
