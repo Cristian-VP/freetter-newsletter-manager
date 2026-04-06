@@ -63,6 +63,32 @@ El flujo de envío implementado en MVP es event-driven entre dominios:
 - `POST /delivery/webhooks/bounces`
 	- body JSON: `{ "workspace_id": "uuid", "campaign_id": "uuid|null", "email": "user@example.com", "bounce_type": "hard|soft|complaint", "code": "550", "reason": "mailbox not found" }`
 
+## Flujo Community MVP
+
+El flujo social implementado en MVP también es event-driven y mantiene ownership de dominio en `community`:
+
+1. Usuario autenticado comenta en un post (`community_comments`) con soporte de reply vía `parent_id`.
+2. Usuario autenticado da/quita like a un post (`community_likes`) con unicidad por `(user_id, post_id)`.
+3. Usuario autenticado sigue/deja de seguir workspaces (`community_followers`) con unicidad por `(follower_id, followed_workspace_id)`.
+4. Moderación de comentarios restringida a roles `owner|admin|editor` del workspace del post.
+5. Community emite eventos de dominio (`CommentCreated`, `CommentModerated`, `PostLiked`, `PostUnliked`, `WorkspaceFollowed`, `WorkspaceUnfollowed`).
+6. Activity registra auditoría de acciones comunitarias vía listeners en `EventServiceProvider`.
+
+### Endpoints MVP Community
+
+- `POST /community/comments`
+	- body JSON: `{ "post_id": "uuid", "content": "texto", "parent_id": "uuid|null" }`
+- `PATCH /community/comments/{comment}/moderate`
+	- body JSON: `{ "action": "hide|delete", "reason": "opcional" }`
+- `POST /community/likes`
+	- body JSON: `{ "post_id": "uuid" }`
+- `DELETE /community/likes`
+	- body JSON: `{ "post_id": "uuid" }`
+- `POST /community/follows`
+	- body JSON: `{ "followed_workspace_id": "uuid" }`
+- `DELETE /community/follows`
+	- body JSON: `{ "followed_workspace_id": "uuid" }`
+
 ---
 
 ## Guía de Instalación Rápida (Getting Started)

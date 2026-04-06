@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 ## [Unreleased]
 ### Added
 - Endpoints for campaigns and bounce webhooks, with validation and idempotent handling (FRT-10)
+- Migrations, Eloquent modeles, HTTP Controllers and Form Requests for comments, likes, follows and moderation in Community Domain(FRT-11)
 - Delivery module with migrations, models, factories, events, listeners, jobs, and HTTP controllers (FRT-10)
 
 ### Changed

@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use Domains\Activity\Listeners\LogCommunityActivity;
 use Domains\Activity\Listeners\LogDeliveryActivity;
 use Domains\Activity\Listeners\LogImportCompleted;
 use Domains\Activity\Listeners\LogImportFailed;
@@ -22,6 +23,12 @@ use Domains\Audience\Events\SubscriberBounced;
 use Domains\Audience\Events\SubscriberCreated;
 use Domains\Audience\Events\SubscriberUnsubscribed;
 use Domains\Audience\Listeners\MarkSubscriberFromDeliveryBounce;
+use Domains\Community\Events\CommentCreated;
+use Domains\Community\Events\CommentModerated;
+use Domains\Community\Events\PostLiked;
+use Domains\Community\Events\PostUnliked;
+use Domains\Community\Events\WorkspaceFollowed;
+use Domains\Community\Events\WorkspaceUnfollowed;
 use Domains\Delivery\Events\BounceCaptured;
 use Domains\Delivery\Events\CampaignCompleted;
 use Domains\Delivery\Events\CampaignCreated;
@@ -125,6 +132,30 @@ class EventServiceProvider extends ServiceProvider
 
         ImportFailed::class => [
             LogImportFailed::class,
+        ],
+
+        CommentCreated::class => [
+            LogCommunityActivity::class,
+        ],
+
+        CommentModerated::class => [
+            LogCommunityActivity::class,
+        ],
+
+        PostLiked::class => [
+            LogCommunityActivity::class,
+        ],
+
+        PostUnliked::class => [
+            LogCommunityActivity::class,
+        ],
+
+        WorkspaceFollowed::class => [
+            LogCommunityActivity::class,
+        ],
+
+        WorkspaceUnfollowed::class => [
+            LogCommunityActivity::class,
         ],
     ];
 
