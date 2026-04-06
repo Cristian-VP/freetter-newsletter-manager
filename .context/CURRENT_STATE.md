@@ -42,6 +42,23 @@ Este documento describe el estado real del repositorio hoy: avance funcional, br
 - qué riesgos nuevos aparecieron:
     - Ninguno relevante para Audience en este release.
 
+## 0.2. Actualización Incremental (06-04-2026)
+- fecha: 6 de abril de 2026
+- qué cambió realmente en código:
+    - Implementación completa del MVP del módulo Delivery: migraciones (delivery_campaigns, delivery_bounces), modelos, factories, eventos, listeners, jobs, controladores HTTP, FormRequests, endpoints y pruebas de integración/eventos.
+    - Integración event-driven entre Delivery, Publishing, Audience y Activity usando eventos de dominio y listeners centralizados en EventServiceProvider.
+    - Manejo idempotente de webhooks de rebote y actualización de estado de suscriptores vía eventos.
+    - Actualización de documentación y validación de wiring de eventos.
+- validación ejecutada:
+    - vendor/bin/pint --dirty --format agent -> pass
+    - php artisan test --compact app-modules/delivery/tests + integración relevante -> 9 pasaron (30 assertions) + integración cruzada OK
+    - Revisión manual de readiness, cobertura y límites de módulo por Guardian y Release Manager.
+- qué riesgos se cerraron:
+    - Se elimina el riesgo de falta de integración entre Delivery y los módulos Publishing/Audience/Activity.
+    - Se confirma readiness para release sin blockers ni warnings relevantes en Delivery.
+- qué riesgos nuevos aparecieron:
+    - Ninguno relevante para Delivery en este release.
+
 ## 1. Resumen Ejecutivo
 
 Freetter tiene dirección de producto y arquitectura bien definida en `.context`, pero la implementación está incompleta y heterogénea entre módulos.

@@ -15,6 +15,8 @@ class DeliveryBounceReceived
         public string $email,
         public string $bounceType,
         public ?string $messageId = null,
+        public ?string $campaignId = null,
+        public ?string $reason = null,
         public array $context = [],
     ) {}
 }

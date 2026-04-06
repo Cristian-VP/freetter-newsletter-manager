@@ -1,11 +1,16 @@
 <?php
 
-// use Domains\Delivery\Http\Controllers\DeliveryController;
+use Domains\Delivery\Http\Controllers\BounceWebhookController;
+use Domains\Delivery\Http\Controllers\CampaignController;
+use Illuminate\Support\Facades\Route;
 
-// Route::get('/deliveries', [DeliveryController::class, 'index'])->name('deliveries.index');
-// Route::get('/deliveries/create', [DeliveryController::class, 'create'])->name('deliveries.create');
-// Route::post('/deliveries', [DeliveryController::class, 'store'])->name('deliveries.store');
-// Route::get('/deliveries/{delivery}', [DeliveryController::class, 'show'])->name('deliveries.show');
-// Route::get('/deliveries/{delivery}/edit', [DeliveryController::class, 'edit'])->name('deliveries.edit');
-// Route::put('/deliveries/{delivery}', [DeliveryController::class, 'update'])->name('deliveries.update');
-// Route::delete('/deliveries/{delivery}', [DeliveryController::class, 'destroy'])->name('deliveries.destroy');
+Route::prefix('delivery')->name('delivery.')->group(function (): void {
+    Route::get('/campaigns/{workspace}', [CampaignController::class, 'index'])
+        ->name('campaigns.index');
+
+    Route::post('/campaigns/{workspace}/send', [CampaignController::class, 'send'])
+        ->name('campaigns.send');
+
+    Route::post('/webhooks/bounces', [BounceWebhookController::class, 'store'])
+        ->name('webhooks.bounces.store');
+});

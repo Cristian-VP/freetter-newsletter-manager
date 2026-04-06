@@ -5,7 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [Unreleased]
+### Added
+- Endpoints for campaigns and bounce webhooks, with validation and idempotent handling (FRT-10)
+- Delivery module with migrations, models, factories, events, listeners, jobs, and HTTP controllers (FRT-10)
 
+### Changed
+- Event-driven integration between Delivery, Publishing, Audience, and Activity using domain events and centralized listeners (FRT-10)
 
 ## [06/04/2026]
 ### Added
