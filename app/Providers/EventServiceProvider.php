@@ -2,12 +2,13 @@
 
 namespace App\Providers;
 
+use Domains\Activity\Listeners\LogDeliveryActivity;
 use Domains\Activity\Listeners\LogImportCompleted;
 use Domains\Activity\Listeners\LogImportFailed;
-use Domains\Activity\Listeners\LogMembershipCreated;
 // ─────────────────────────────────────────────────────────────────
 // EVENTS de Identity
 // ─────────────────────────────────────────────────────────────────
+use Domains\Activity\Listeners\LogMembershipCreated;
 use Domains\Activity\Listeners\LogPostPublished;
 use Domains\Activity\Listeners\LogSubscriberBounced;
 use Domains\Activity\Listeners\LogSubscriberCreated;
@@ -21,7 +22,12 @@ use Domains\Audience\Events\SubscriberBounced;
 use Domains\Audience\Events\SubscriberCreated;
 use Domains\Audience\Events\SubscriberUnsubscribed;
 use Domains\Audience\Listeners\MarkSubscriberFromDeliveryBounce;
+use Domains\Delivery\Events\BounceCaptured;
+use Domains\Delivery\Events\CampaignCompleted;
+use Domains\Delivery\Events\CampaignCreated;
+use Domains\Delivery\Events\CampaignSendingStarted;
 use Domains\Delivery\Events\DeliveryBounceReceived;
+use Domains\Delivery\Listeners\CreateDeliveryCampaignOnPublish;
 use Domains\Identity\Events\MembershipCreated;
 // ─────────────────────────────────────────────────────────────────
 // LISTENERS de Activity
@@ -78,10 +84,27 @@ class EventServiceProvider extends ServiceProvider
 
         PostPublished::class => [
             LogPostPublished::class,
+            CreateDeliveryCampaignOnPublish::class,
         ],
 
         DeliveryBounceReceived::class => [
             MarkSubscriberFromDeliveryBounce::class,
+        ],
+
+        CampaignCreated::class => [
+            LogDeliveryActivity::class,
+        ],
+
+        CampaignSendingStarted::class => [
+            LogDeliveryActivity::class,
+        ],
+
+        CampaignCompleted::class => [
+            LogDeliveryActivity::class,
+        ],
+
+        BounceCaptured::class => [
+            LogDeliveryActivity::class,
         ],
 
         SubscriberCreated::class => [
