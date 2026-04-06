@@ -2,14 +2,26 @@
 
 namespace App\Providers;
 
+use Domains\Activity\Listeners\LogImportCompleted;
+use Domains\Activity\Listeners\LogImportFailed;
 use Domains\Activity\Listeners\LogMembershipCreated;
 // ─────────────────────────────────────────────────────────────────
 // EVENTS de Identity
 // ─────────────────────────────────────────────────────────────────
 use Domains\Activity\Listeners\LogPostPublished;
+use Domains\Activity\Listeners\LogSubscriberBounced;
+use Domains\Activity\Listeners\LogSubscriberCreated;
+use Domains\Activity\Listeners\LogSubscriberUnsubscribed;
 use Domains\Activity\Listeners\LogUserEmailVerified;
 use Domains\Activity\Listeners\LogUserRegistered;
 use Domains\Activity\Listeners\LogWorkspaceCreated;
+use Domains\Audience\Events\ImportCompleted;
+use Domains\Audience\Events\ImportFailed;
+use Domains\Audience\Events\SubscriberBounced;
+use Domains\Audience\Events\SubscriberCreated;
+use Domains\Audience\Events\SubscriberUnsubscribed;
+use Domains\Audience\Listeners\MarkSubscriberFromDeliveryBounce;
+use Domains\Delivery\Events\DeliveryBounceReceived;
 use Domains\Identity\Events\MembershipCreated;
 // ─────────────────────────────────────────────────────────────────
 // LISTENERS de Activity
@@ -66,6 +78,30 @@ class EventServiceProvider extends ServiceProvider
 
         PostPublished::class => [
             LogPostPublished::class,
+        ],
+
+        DeliveryBounceReceived::class => [
+            MarkSubscriberFromDeliveryBounce::class,
+        ],
+
+        SubscriberCreated::class => [
+            LogSubscriberCreated::class,
+        ],
+
+        SubscriberUnsubscribed::class => [
+            LogSubscriberUnsubscribed::class,
+        ],
+
+        SubscriberBounced::class => [
+            LogSubscriberBounced::class,
+        ],
+
+        ImportCompleted::class => [
+            LogImportCompleted::class,
+        ],
+
+        ImportFailed::class => [
+            LogImportFailed::class,
         ],
     ];
 
