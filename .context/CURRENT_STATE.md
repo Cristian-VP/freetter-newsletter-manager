@@ -23,6 +23,25 @@ Este documento describe el estado real del repositorio hoy: avance funcional, br
 - qué riesgos nuevos aparecieron:
     - Permanece un warning menor por un test de integración no relacionado (`IdentityActivityEventsIntegrationTest`).
 
+## 0.1. Actualización Incremental (26-03-2026)
+
+- fecha: 26 de marzo de 2026
+- qué cambió realmente en código:
+    - Implementación completa del MVP del módulo Audience: migraciones, modelos, factories, eventos, jobs, listeners, endpoints HTTP y pruebas de integración/eventos.
+    - Integración event-driven entre Audience, Activity y Delivery usando eventos de dominio.
+    - Detección de duplicados y manejo de errores en importación de suscriptores (soporte DB-agnóstico).
+    - Validación de email relajada para entornos de test/dev.
+    - Ejecución determinista de jobs de importación en tests.
+- validación ejecutada:
+    - `vendor/bin/pint --dirty --format agent` -> pass
+    - `php artisan test --compact app-modules/audience/tests` -> 16 pasaron (48 assertions)
+    - Revisión manual de readiness, cobertura y límites de módulo por Guardian y Release Manager.
+- qué riesgos se cerraron:
+    - Se elimina el riesgo de regresión y violación de límites en Audience.
+    - Se confirma readiness para release sin blockers ni warnings relevantes.
+- qué riesgos nuevos aparecieron:
+    - Ninguno relevante para Audience en este release.
+
 ## 1. Resumen Ejecutivo
 
 Freetter tiene dirección de producto y arquitectura bien definida en `.context`, pero la implementación está incompleta y heterogénea entre módulos.
