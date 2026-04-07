@@ -2,9 +2,9 @@
 
 namespace Domains\Identity\Observers;
 
-use Domains\Identity\Models\User;
-use Domains\Identity\Events\UserRegistered;
 use Domains\Identity\Events\UserEmailVerified;
+use Domains\Identity\Events\UserRegistered;
+use Domains\Identity\Models\User;
 
 class UserObserver
 {
@@ -18,7 +18,7 @@ class UserObserver
             context: [
                 'ip' => request()->ip(),
                 'user_agent' => request()->userAgent(),
-                'created_via' => 'observer'
+                'created_via' => 'observer',
             ]
         ));
     }
@@ -34,7 +34,11 @@ class UserObserver
         if ($emailWasVerified) {
             event(new UserEmailVerified(
                 user: $user,
-                verifiedAt: $user->email_verified_at
+                verifiedAt: $user->email_verified_at,
+                context: [
+                    'ip' => request()->ip(),
+                    'user_agent' => request()->userAgent(),
+                ]
             ));
         }
     }
