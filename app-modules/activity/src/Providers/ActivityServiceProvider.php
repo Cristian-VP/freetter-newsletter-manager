@@ -25,7 +25,7 @@ class ActivityServiceProvider extends ServiceProvider
     {
         //  Cargar migraciones del módulo
         $this->loadMigrationsFrom(__DIR__.'/../../database/migrations');
-        $this->loadRoutesFrom(__DIR__.'/../../routes/activity-routes.php');
+        $this->loadRoutesFrom(__DIR__.'/../../routes/web.php');
 
         //  Lazy Loading Prevention (desarrollo)
         if ($this->app->environment('local')) {

@@ -29,6 +29,6 @@ class IdentityServiceProvider extends ServiceProvider
         Membership::observe(MembershipObserver::class);
 
         $this->loadMigrationsFrom(__DIR__.'/../../database/migrations');
-        $this->loadRoutesFrom(__DIR__.'/../../routes/identity-routes.php');
+        $this->loadRoutesFrom(__DIR__.'/../../routes/web.php');
     }
 }
