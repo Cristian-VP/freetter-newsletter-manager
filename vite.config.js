@@ -2,6 +2,7 @@ import react from "@vitejs/plugin-react";
 import laravel from "laravel-vite-plugin";
 import { defineConfig } from "vite";
 import tsconfigPaths from "vite-tsconfig-paths";
+import tailwindcss from "@tailwindcss/vite";
 
 export default defineConfig({
   plugins: [
@@ -10,9 +11,20 @@ export default defineConfig({
       ssr: "resources/js/ssr.jsx",
       refresh: true,
     }),
+    tailwindcss(),
     react(),
     tsconfigPaths(), // Resolve path aliases in tsconfig.json.
   ],
+  server: {
+    host: "localhost",
+    port: 5173,
+    strictPort: false,
+    middlewareMode: false,
+    hmr: {
+      host: "localhost",
+      port: 5173,
+    },
+  },
   esbuild: {
     jsx: "automatic",
   },
