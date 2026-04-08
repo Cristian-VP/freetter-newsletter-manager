@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignUuid('user_id')->constrained('identity_users')->cascadeOnDelete();
             $table->foreignUuid('post_id')->constrained('publishing_posts')->cascadeOnDelete();
             $table->foreignUuid('workspace_id')->constrained('identity_workspaces')->cascadeOnDelete();
-            $table->foreignUuid('parent_id')->nullable()->constrained('community_comments')->nullOnDelete();
+            $table->uuid('parent_id')->nullable();
             $table->text('content');
             $table->boolean('is_hidden')->default(false);
             $table->foreignUuid('moderated_by_user_id')->nullable()->constrained('identity_users')->nullOnDelete();
@@ -26,6 +26,14 @@ return new class extends Migration
             $table->index(['workspace_id', 'created_at'], 'idx_community_comments_workspace_created');
             $table->index('parent_id', 'idx_community_comments_parent');
             $table->index(['post_id', 'is_hidden', 'created_at'], 'idx_community_comments_post_visible');
+        });
+
+        // Agregar la self-referencing foreign key después de que la tabla esté creada
+        Schema::table('community_comments', function (Blueprint $table): void {
+            $table->foreign('parent_id')
+                ->references('id')
+                ->on('community_comments')
+                ->nullOnDelete();
         });
     }
 
