@@ -1,264 +1,76 @@
-# INERTIA.JS V3 QUICKSTART: IMPLEMENTACIÓN EN FREETTER
+# INERTIA.JS V3 QUICKSTART: FREETTER MODULAR
 
-## ⚡ Inicio Rápido (90 minutos)
+## Objetivo
 
-Este documento es un **step-by-step ejecutable** para tener Inertia.js funcionando en Freetter con tu primer componente React.
+Validar el arranque Inertia con la estructura modular real del proyecto, sin asumir rutas o archivos genéricos que no existen aquí.
 
----
+## Estado esperado en Freetter
 
-## Paso 1: Instalar Dependencias NPM (5 minutos)
-
-```bash
-cd /workspace
+- `resources/views/app.blade.php` como root template Inertia.
+- `resources/js/app.tsx` como entrada React.
+- `app/Http/Middleware/HandleInertiaRequests.php` registrado en `bootstrap/app.php`.
+- Rutas de módulo en `app-modules/*/routes/web.php` cargadas desde sus Service Providers.
+- Páginas React resueltas con la convención `module::page`.
 
-# Instalar paquetes Inertia + React
-npm install @inertiajs/react @inertiajs/vite react react-dom
-```
+## Verificación rápida
 
-**Verificar**:
-```bash
-npm list @inertiajs/react @inertiajs/vite react
-```
+### 1. Dependencias instaladas
 
-**Salida esperada**:
-```
-├── @inertiajs/react@3.0.0
-├── @inertiajs/vite@3.0.0
-├── react@18.3.1
-└── react-dom@18.3.1
-```
+- `@inertiajs/react`
+- `@inertiajs/vite`
+- `react`
+- `react-dom`
 
----
+### 2. Root template correcto
 
-## Paso 2: Crear Root Template Blade (5 minutos)
+Comprueba que [resources/views/app.blade.php](resources/views/app.blade.php) usa:
 
-**Archivo**: `resources/views/app.blade.php`
+- `@viteReactRefresh`
+- `@inertiaHead`
+- `@inertia`
+- carga condicional de páginas del módulo con `@vite([... "app-modules/.../resources/js/pages/...tsx"])`
 
-```blade
-<!DOCTYPE html>
-<html lang="en">
-    <head>
-        <meta charset="utf-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-        @viteReactRefresh
-        @vite(['resources/js/app.jsx', 'resources/css/app.css'])
-        <x-inertia::head />
-    </head>
-    <body>
-        <x-inertia::app />
-    </body>
-</html>
-```
+### 3. Middleware compartido
 
-**Verificar**: `ls -la resources/views/app.blade.php` debe existir
+Comprueba que [bootstrap/app.php](bootstrap/app.php) registra:
 
----
+- `HandleInertiaRequests::class`
+- `AddLinkHeadersForPreloadedAssets::class`
 
-## Paso 3: Generar Middleware Inertia (5 minutos)
-
-```bash
-php artisan inertia:middleware
-```
+### 4. Entrada React
 
-**Verificar**: `ls -la app/Http/Middleware/HandleInertiaRequests.php` debe existir
+Comprueba que [resources/js/app.tsx](resources/js/app.tsx) hace:
 
-**Editar** `bootstrap/app.php`:
+- `createInertiaApp()`
+- `resolvePageComponent()`
+- soporte para componentes `module::page`
 
-Busca esta sección:
-```php
-->withMiddleware(function (Middleware $middleware) {
-    //
-})
-```
+### 5. Ruta raíz
 
-Y reemplázala con:
-```php
-->withMiddleware(function (Middleware $middleware) {
-    $middleware->web(append: [
-        \App\Http\Middleware\HandleInertiaRequests::class,
-    ]);
-})
-```
+La ruta principal debe devolver una página Inertia real o una página del flujo actual del proyecto, no Blade genérico.
 
-**Verificar**: `grep -A 3 "HandleInertiaRequests" bootstrap/app.php` debe retornar el middleware
+## Flujo recomendado
 
----
+1. Verificar el arranque con `npm run build`.
+2. Levantar el entorno de desarrollo.
+3. Abrir la página inicial y confirmar que Inertia resuelve la vista correcta.
+4. Probar una ruta de módulo ya existente.
 
-## Paso 4: Actualizar Vite Config (5 minutos)
+## Páginas de ejemplo a revisar
 
-**Archivo**: `vite.config.js`
+- autenticación/identidad si ya existe pantalla
+- páginas de workspace
+- cualquier página de módulo que ya esté conectada a rutas reales
 
-Abre el archivo actual y reemplaza TODO el contenido con:
+## Lo que no debes copiar de una plantilla genérica
 
-```javascript
-import { defineConfig } from 'vite'
-import laravel from 'laravel-vite-plugin'
-import react from '@vitejs/plugin-react'
-import inertia from '@inertiajs/vite'
-import { tailwindPlugin } from '@tailwindcss/vite'
+- `resources/js/app.jsx` si el proyecto ya usa `app.tsx`
+- `resources/js/Pages/` si el proyecto resuelve módulos desde `app-modules/*/resources/js/pages`
+- `x-inertia::app` o `x-inertia::head` si el root template real usa `@inertia` y `@inertiaHead`
 
-export default defineConfig({
-    plugins: [
-        laravel({
-            input: ['resources/js/app.jsx'],
-            refresh: true,
-        }),
-        react(),
-        inertia(),
-        tailwindPlugin(),
-    ],
-})
-```
+## Resultado buscado
 
-**Verificar**: `grep "inertia()" vite.config.js` debe retornar la línea
-
----
-
-## Paso 5: Crear Entry Point React (5 minutos)
-
-**Archivo**: `resources/js/app.jsx`
-
-```jsx
-import { createInertiaApp } from '@inertiajs/react'
-
-createInertiaApp()
-```
-
-**Verificar**: `cat resources/js/app.jsx` debe mostrar exactamente esto
-
----
-
-## Paso 6: Crear Primer Componente (5 minutos)
-
-**Archivo**: `resources/js/Pages/Welcome.jsx`
-
-```jsx
-import { Head } from '@inertiajs/react'
-
-export default function Welcome({ message }) {
-    return (
-        <>
-            <Head title="Welcome" />
-            <div className="flex items-center justify-center min-h-screen bg-gray-100">
-                <div className="text-center">
-                    <h1 className="text-4xl font-bold mb-4 text-gray-900">
-                        Welcome to Freetter
-                    </h1>
-                    <p className="text-xl text-gray-600 mb-8">
-                        {message}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                        Built with Inertia.js v3 + React + Tailwind CSS
-                    </p>
-                </div>
-            </div>
-        </>
-    )
-}
-```
-
-**Verificar**: `ls -la resources/js/Pages/Welcome.jsx` debe existir
-
----
-
-## Paso 7: Actualizar Ruta Principal (5 minutos)
-
-**Archivo**: `routes/web.php`
-
-Reemplaza el contenido actual con:
-
-```php
-<?php
-
-use Inertia\Inertia;
-use Illuminate\Support\Facades\Route;
-
-Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'message' => 'This is your first Inertia component!',
-    ]);
-});
-
-// Cargar rutas de módulos
-require __DIR__.'/identity-routes.php';
-require __DIR__.'/publishing-routes.php';
-require __DIR__.'/audience-routes.php';
-require __DIR__.'/community-routes.php';
-require __DIR__.'/delivery-routes.php';
-require __DIR__.'/activity-routes.php';
-```
-
-**Verificar**: `grep "Inertia::render" routes/web.php` debe retornar la línea
-
----
-
-## Paso 8: Verificar Build (10 minutos)
-
-```bash
-npm run build
-```
-
-**Salida esperada**:
-```
-✓ built in 3.45s
-```
-
-**Si falla**: Ejecuta `npm run dev` en otra terminal para debug
-
----
-
-## Paso 9: Iniciar Dev Server (10 minutos)
-
-```bash
-composer run dev
-```
-
-Esto inicia:
-- ✅ Laravel dev server (puerto 8000)
-- ✅ Vite dev server (con HMR)
-- ✅ Redis para colas
-- ✅ Laravel logs
-
-**Espera a ver**:
-```
-APP_URL: http://127.0.0.1:8000
-Vite is ready: http://127.0.0.1:5173
-```
-
----
-
-## Paso 10: Verificar en Navegador (5 minutos)
-
-Abre: **http://localhost:8000**
-
-**Esperado**:
-- ✅ Ves "Welcome to Freetter"
-- ✅ Ves "This is your first Inertia component!"
-- ✅ Estilos de Tailwind aplicados (fondo gris)
-- ✅ Sin errores en consola del navegador
-
-**Si no funciona**:
-1. Verifica que no hay errores en terminal de `composer run dev`
-2. Abre DevTools (F12) → Console → busca errores rojo
-3. Verifica que middleware está en `bootstrap/app.php`
-
----
-
-## Paso 11: Hot Module Reload (HMR) (5 minutos)
-
-Para verificar que el desarrollo es ágil:
-
-1. Abre `resources/js/Pages/Welcome.jsx`
-2. Cambia el texto:
-   ```jsx
-   <h1 className="text-4xl font-bold mb-4 text-blue-600">
-       ¡Bienvenido a Freetter!
-   </h1>
-   ```
-3. Guarda (Ctrl+S)
-4. **El navegador se actualiza automáticamente sin refresco**
-
-✅ Esto confirma que HMR funciona correctamente
+Si el quickstart está bien, el proyecto arranca con Inertia sin perder su estructura modular y sin introducir rutas o carpetas que no pertenecen al diseño actual.
 
 ---
 

@@ -1,262 +1,60 @@
 # FREETTER INERTIA.JS V3: ARCHIVO CHANGES + STRUCTURE
 
-## 🎯 Propósito
+## Propósito
 
-Este documento muestra **EXACTAMENTE qué archivos cambiarán y cuáles se crearán** cuando integres Inertia.js en tu arquitectura modular.
+Resumen breve de los archivos que Inertia toca en Freetter y de la convención que ya usa el proyecto.
 
-Después del setup, tu proyecto lucirá así:
+## Archivos clave
 
----
+### Root y arranque
 
-## FASE 1: Archivos Nuevos (QUICKSTART)
+- [resources/views/app.blade.php](../resources/views/app.blade.php)
+- [resources/js/app.tsx](../resources/js/app.tsx)
+- [app/Http/Middleware/HandleInertiaRequests.php](../app/Http/Middleware/HandleInertiaRequests.php)
+- [bootstrap/app.php](../bootstrap/app.php)
 
-### Dependencias NPM
-```
-package.json
-+ "dependencies": {
-+   "@inertiajs/react": "^3.0.0",
-+   "@inertiajs/vite": "^3.0.0",
-+   "react": "^18.3.1",
-+   "react-dom": "^18.3.1"
-+ }
-```
+### Rutas de módulo
 
-### Archivos Creados
+- [app-modules/identity/routes/web.php](../app-modules/identity/routes/web.php)
+- [app-modules/publishing/routes/web.php](../app-modules/publishing/routes/web.php)
+- [app-modules/audience/routes/web.php](../app-modules/audience/routes/web.php)
+- [app-modules/community/routes/web.php](../app-modules/community/routes/web.php)
+- [app-modules/delivery/routes/web.php](../app-modules/delivery/routes/web.php)
+- [app-modules/activity/routes/web.php](../app-modules/activity/routes/web.php)
 
-```
-✅ resources/views/app.blade.php           ← ROOT TEMPLATE (nuevo)
-✅ resources/js/app.jsx                    ← ENTRY POINT (cambiar de .js a .jsx)
-✅ app/Http/Middleware/HandleInertiaRequests.php  ← MIDDLEWARE (nuevo)
-✅ resources/js/Pages/Welcome.jsx          ← PRIMER COMPONENTE (nuevo)
-✅ resources/js/Layouts/AppLayout.jsx      ← LAYOUT BASE (nuevo)
-✅ resources/js/Layouts/GuestLayout.jsx    ← LAYOUT AUTH (nuevo)
-```
+### Configuración frontend
 
-### Archivos Modificados
+- [vite.config.js](../vite.config.js)
+- [package.json](../package.json)
 
-```
-📝 vite.config.js                          ← Agregar inertia plugin + react
-📝 bootstrap/app.php                       ← Registrar middleware
-📝 routes/web.php                          ← Cambiar GET / a Inertia::render()
-```
+## Lo que ya está alineado con la plantilla modular
 
----
+- template root Inertia en Blade
+- entrada React centralizada en `app.tsx`
+- resolución de páginas por módulo con `module::page`
+- carga de rutas por Service Provider de módulo
 
-## FASE 2: Estructura Final de Directorios (Después de Setup)
+## Lo que no conviene copiar de plantillas genéricas
 
-### Antes (Blade)
-```
-resources/
-├─ views/
-│  ├─ welcome.blade.php
-│  └─ ... (otras blade templates)
-├─ js/
-│  ├─ app.js
-│  └─ bootstrap.js
-└─ css/
-   └─ app.css
-```
+- archivos `resources/js/Pages/` como única fuente de páginas
+- `routes/*.php` que requieran ficheros inexistentes
+- root template con componentes `x-inertia::*` si el proyecto usa `@inertia` y `@inertiaHead`
 
-### Después (Inertia + React)
-```
-resources/
-├─ views/
-│  ├─ app.blade.php                  ✅ NUEVO (root template)
-│  └─ welcome.blade.php              ❌ REMOVIDO (reemplazado por React)
-│
-├─ js/
-│  ├─ app.jsx                        📝 CAMBIÓ (input de Vite ahora .jsx)
-│  ├─ bootstrap.js                   ✅ (sin cambios)
-│  │
-│  ├─ Layouts/                       ✅ NUEVO
-│  │  ├─ AppLayout.jsx
-│  │  ├─ GuestLayout.jsx
-│  │  └─ WorkspaceLayout.jsx         (opcional, post-MVP)
-│  │
-│  ├─ Pages/                         ✅ NUEVO
-│  │  ├─ Welcome.jsx
-│  │  │
-│  │  ├─ Identity/
-│  │  │  ├─ Auth/
-│  │  │  │  ├─ Login.jsx
-│  │  │  │  ├─ Register.jsx
-│  │  │  │  └─ MagicLink.jsx
-│  │  │  └─ Workspace/
-│  │  │     ├─ Index.jsx
-│  │  │     ├─ Show.jsx
-│  │  │     ├─ Create.jsx
-│  │  │     └─ Members.jsx
-│  │  │
-│  │  ├─ Publishing/
-│  │  │  ├─ Posts/
-│  │  │  │  ├─ Index.jsx
-│  │  │  │  ├─ Create.jsx
-│  │  │  │  ├─ Edit.jsx
-│  │  │  │  └─ Show.jsx
-│  │  │  └─ Tags/
-│  │  │     └─ Index.jsx
-│  │  │
-│  │  ├─ Audience/
-│  │  │  ├─ Subscribers/
-│  │  │  │  ├─ Index.jsx
-│  │  │  │  └─ Import.jsx
-│  │  │  └─ Segments.jsx
-│  │  │
-│  │  ├─ Community/
-│  │  │  └─ Comments/
-│  │  │     └─ Moderate.jsx
-│  │  │
-│  │  ├─ Delivery/
-│  │  │  ├─ Campaigns/
-│  │  │  │  ├─ Index.jsx
-│  │  │  │  ├─ Create.jsx
-│  │  │  │  └─ Show.jsx
-│  │  │  └─ Analytics.jsx
-│  │  │
-│  │  ├─ Activity/
-│  │  │  └─ Logs.jsx
-│  │  │
-│  │  └─ Errors/
-│  │     ├─ 404.jsx
-│  │     ├─ 500.jsx
-│  │     └─ 403.jsx
-│  │
-│  ├─ Components/                    ✅ NUEVO (compartidos)
-│  │  ├─ Button.jsx
-│  │  ├─ Modal.jsx
-│  │  ├─ Form/
-│  │  │  ├─ Input.jsx
-│  │  │  ├─ Select.jsx
-│  │  │  ├─ Textarea.jsx
-│  │  │  └─ FileInput.jsx
-│  │  ├─ Alerts/
-│  │  │  ├─ Success.jsx
-│  │  │  ├─ Error.jsx
-│  │  │  └─ Info.jsx
-│  │  └─ Icons/
-│  │     ├─ LogoIcon.jsx
-│  │     └─ ... (otros)
-│  │
-│  └─ __tests__/                    (opcional, React tests)
-│     └─ ...
-│
-└─ css/
-   └─ app.css                       ✅ (sin cambios)
-```
+## Cambios habituales al integrar una nueva pantalla
 
----
+1. crear o actualizar el controlador del módulo
+2. devolver `Inertia::render()`
+3. crear la página React en el directorio del módulo
+4. ajustar la ruta del módulo si hace falta
+5. pasar datos compartidos solo si son transversales
 
-## FASE 3: Cambios en Controladores de Módulos
+## Orden recomendado para revisar una diferencia
 
-### Identity Module - Ejemplo
-
-#### ANTES (Blade)
-```php
-// app-modules/identity/src/Http/Controllers/AuthController.php
-
-class AuthController {
-    public function showLogin() {
-        return view('auth.login');  // ❌ Retorna Blade
-    }
-}
-```
-
-#### DESPUÉS (Inertia)
-```php
-// app-modules/identity/src/Http/Controllers/AuthController.php
-
-use Inertia\Inertia;
-
-class AuthController {
-    public function showLogin() {
-        return Inertia::render('Identity/Auth/Login');  // ✅ Retorna React
-    }
-}
-```
-
-### Publishing Module - Ejemplo
-
-#### ANTES (Blade)
-```php
-// app-modules/publishing/src/Http/Controllers/PostController.php
-
-class PostController {
-    public function index(Workspace $workspace) {
-        $posts = $workspace->posts()->paginate();
-        return view('publishing::posts.index', ['posts' => $posts]);
-    }
-}
-```
-
-#### DESPUÉS (Inertia)
-```php
-// app-modules/publishing/src/Http/Controllers/PostController.php
-
-use Inertia\Inertia;
-
-class PostController {
-    public function index(Workspace $workspace) {
-        $posts = $workspace->posts()
-            ->with('author', 'tags')
-            ->paginate();
-
-        return Inertia::render('Publishing/Posts/Index', [
-            'posts' => $posts,
-            'can' => [
-                'create' => auth()->user()->can('create', Post::class),
-            ],
-        ]);
-    }
-}
-```
-
----
-
-## FASE 4: Cambios en Rutas de Módulos
-
-### Identity Routes - ANTES vs DESPUÉS
-
-#### ANTES
-```php
-// routes/identity-routes.php
-Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-// Retornan view() en controlador
-```
-
-#### DESPUÉS
-```php
-// routes/identity-routes.php
-Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
-Route::post('/login', [AuthController::class, 'login'])->name('login.post');
-Route::get('/register', [AuthController::class, 'showRegister'])->name('register');
-// Retornan Inertia::render() en controlador
-// ❌ NO SE CAMBIAN las rutas, solo lo que retornan los controladores
-```
-
----
-
-## FASE 5: Cambios en Config + Middleware
-
-### vite.config.js
-
-#### ANTES
-```javascript
-import { defineConfig } from 'vite'
-import laravel from 'laravel-vite-plugin'
-import { tailwindPlugin } from '@tailwindcss/vite'
-
-export default defineConfig({
-    plugins: [
-        laravel({
-            input: ['resources/js/app.js'],
-            refresh: true,
-        }),
-        tailwindPlugin(),
-    ],
-})
-```
+1. ruta del módulo
+2. controlador del módulo
+3. página React correspondiente
+4. datos compartidos del middleware
+5. Vite/root template solo si cambia el arranque
 
 #### DESPUÉS
 ```javascript

@@ -1,264 +1,111 @@
 # INERTIA.JS MODULAR INTEGRATION GUIDE FOR FREETTER
 
-## 🏗️ Propósito
+## Propósito
 
-Este documento especifica **EXACTAMENTE cómo integrar Inertia.js v3 con la arquitectura modular de Freetter**.
+Esta guía explica cómo aplicar Inertia en el monolito modular de Freetter sin romper los límites de dominio.
 
-Los documentos anteriores eran genéricos. Este es **específico a tu estructura**.
+## Regla principal
 
----
+Inertia cambia la capa de presentación, no el dominio.
 
-## 1. Arquitectura Modular de Freetter + Inertia.js
+### Permanece igual
 
-### Estado Actual (Sin Inertia)
+- modelos
+- migraciones
+- eventos y listeners
+- reglas de negocio de cada módulo
+- rutas y ownership de cada bounded context
 
-```
-Blade views (tradicional)
-    ↓
-Controllers en app-modules/
-    ↓
-Rutas en app-modules/routes/
-    ↓
-Models + Events
-```
+### Cambia
 
-### Estado Destino (Con Inertia)
+- los controladores retornan `Inertia::render()`
+- las páginas pasan a React
+- el estado compartido se define en `HandleInertiaRequests`
 
-```
-React Components (Pages + Layouts + Components)
-    ↓
-Controllers en app-modules/ retornan Inertia::render()
-    ↓
-Rutas en app-modules/routes/ sin cambios
-    ↓
-Models + Events sin cambios
-```
+## Estructura real del proyecto
 
-**El punto clave**: Los controladores **cambian su respuesta de Blade a Inertia**, pero TODO lo demás (lógica, modelos, eventos) **permanece igual**.
+Tu instalación actual ya usa esta forma:
 
----
+- `app-modules/<modulo>/src/Http/Controllers/`
+- `app-modules/<modulo>/routes/web.php`
+- `app-modules/<modulo>/src/Providers/*ServiceProvider.php`
+- `app-modules/<modulo>/resources/js/pages/`
 
-## 2. Validación: Estructura Modular Actual de Freetter
+## Convención de resolución
 
-### Módulos Implementados (según CURRENT_STATE.md)
+Freetter ya no depende de una única carpeta global `resources/js/Pages` para todo.
 
-```
-app-modules/
-├─ identity/
-│  ├─ src/
-│  │  ├─ Http/
-│  │  │  └─ Controllers/        ← AQUÍ van controladores Inertia
-│  │  ├─ Models/                ← No cambios
-│  │  ├─ Events/                ← No cambios
-│  │  └─ Observers/             ← No cambios
-│  ├─ routes/
-│  │  └─ identity-routes.php    ← En vía de actualización
-│  └─ ... (migrations, tests)
-│
-├─ publishing/
-│  ├─ src/Http/Controllers/     ← AQUÍ van controladores Inertia
-│  └─ routes/publishing-routes.php
-│
-├─ audience/
-│  ├─ src/Http/Controllers/     ← AQUÍ van controladores Inertia
-│  └─ routes/audience-routes.php
-│
-├─ community/
-│  ├─ src/Http/Controllers/     ← AQUÍ van controladores Inertia
-│  └─ routes/community-routes.php
-│
-├─ delivery/
-│  ├─ src/Http/Controllers/     ← AQUÍ van controladores Inertia
-│  └─ routes/delivery-routes.php
-│
-└─ activity/
-   ├─ src/Http/Controllers/     ← AQUÍ van controladores Inertia
-   └─ routes/activity-routes.php
-```
+La convención práctica es:
 
-**Conclusión**: Tu estructura modular es **perfecta para Inertia**. Cada módulo ya tiene el lugar para sus controladores.
+- páginas globales: `resources/js/pages/*.tsx`
+- páginas de módulo: `app-modules/<modulo>/resources/js/pages/*.tsx`
+- rutas Inertia con nombre lógico de componente: `Modulo/Subruta/Pagina`
 
----
+## Ejemplo de flujo
 
-## 3. Patrón: Cómo Estructura Funciona
+1. La ruta del módulo vive en `app-modules/<modulo>/routes/web.php`.
+2. El Service Provider del módulo la carga con `loadRoutesFrom()`.
+3. El controlador del módulo prepara los datos.
+4. El controlador devuelve `Inertia::render()`.
+5. `resources/views/app.blade.php` carga la entrada React correcta.
+6. `resources/js/app.tsx` resuelve el componente apropiado.
 
-### Flujo de Request en Freetter Modular
+## Shared data recomendada
 
-```
-1️⃣ USER REQUEST
-   GET /workspace/123/posts
+El middleware Inertia debe compartir solo datos realmente globales:
 
-2️⃣ ROUTER (routes/web.php)
-   → require __DIR__.'/publishing-routes.php'
+- `auth.user`
+- información de navegación global si aplica
+- flashes de sesión
 
-3️⃣ MODULE ROUTER (publishing-routes.php)
-   Route::get('/workspace/{workspace}/posts',
-       [PostController::class, 'index'])
+Los datos de workspace o módulo deben compartirse solo si son transversales y estables.
 
-4️⃣ MODULE CONTROLLER (publishing/src/Http/Controllers/PostController.php)
-   ┌─────────────────────────────────────────┐
-   │ public function index(Workspace $w)     │
-   │ {                                       │
-   │   return Inertia::render(              │
-   │     'Publishing/Posts/Index',  ← AQUÍ  │
-   │     ['workspace' => $w, ...]           │
-   │   );                                    │
-   │ }                                       │
-   └─────────────────────────────────────────┘
+## Qué hacer por módulo
 
-5️⃣ INERTIA RESPONDE
-   HTTP 200
-   {
-     "component": "Publishing/Posts/Index",  ← React component
-     "props": { "workspace": {...}, ... },
-     ...
-   }
+### Identity
 
-6️⃣ REACT MONTA
-   resources/js/Pages/Publishing/Posts/Index.jsx
-```
+- pantallas de autenticación y workspace
+- controladores que devuelven páginas Inertia
+- contexto de usuario y pertenencia
 
----
+### Publishing
 
-## 4. Convención de Nombres: Componentes React por Módulo
+- índices, formularios y detalle de posts
+- estado de publicación y edición
 
-### Estructura Esperada de `resources/js/Pages/`
+### Audience
 
-```
-resources/js/Pages/
-│
-├─ Identity/                    ← Componentes del módulo identity
-│  ├─ Auth/
-│  │  ├─ Login.jsx             ← Route: GET /login
-│  │  ├─ Register.jsx          ← Route: GET /register
-│  │  └─ MagicLink.jsx         ← Route: GET /magic-link
-│  │
-│  └─ Workspace/
-│     ├─ Index.jsx             ← Route: GET /workspace
-│     ├─ Show.jsx              ← Route: GET /workspace/:id
-│     ├─ Create.jsx            ← Route: GET /workspace/create
-│     ├─ Members.jsx           ← Route: GET /workspace/:id/members
-│     └─ Invitations.jsx       ← Route: GET /workspace/:id/invitations
-│
-├─ Publishing/                  ← Componentes del módulo publishing
-│  ├─ Posts/
-│  │  ├─ Index.jsx             ← Route: GET /workspace/:id/posts
-│  │  ├─ Create.jsx            ← Route: GET /workspace/:id/posts/create
-│  │  ├─ Edit.jsx              ← Route: GET /workspace/:id/posts/:id/edit
-│  │  └─ Show.jsx              ← Route: GET /workspace/:id/posts/:id
-│  │
-│  └─ Tags/
-│     └─ Index.jsx             ← Route: GET /workspace/:id/tags
-│
-├─ Audience/                    ← Componentes del módulo audience
-│  └─ Subscribers/
-│     ├─ Index.jsx             ← Route: GET /workspace/:id/subscribers
-│     └─ Import.jsx            ← Route: GET /workspace/:id/subscribers/import
-│
-├─ Community/                   ← Componentes del módulo community
-│  └─ Comments/
-│     └─ Moderate.jsx          ← Route: GET /workspace/:id/comments/moderate
-│
-├─ Delivery/                    ← Componentes del módulo delivery
-│  └─ Campaigns/
-│     ├─ Index.jsx             ← Route: GET /workspace/:id/campaigns
-│     ├─ Create.jsx            ← Route: GET /workspace/:id/campaigns/create
-│     ├─ Show.jsx              ← Route: GET /workspace/:id/campaigns/:id
-│     └─ Analytics.jsx         ← Route: GET /workspace/:id/analytics
-│
-├─ Activity/                    ← Componentes del módulo activity
-│  └─ Logs.jsx                 ← Route: GET /workspace/:id/activity
-│
-├─ Layouts/
-│  ├─ AppLayout.jsx            ← Sidebar + Navbar + Workspace context
-│  ├─ GuestLayout.jsx          ← Solo para auth públicas
-│  └─ WorkspaceLayout.jsx      ← Específico para dentro de workspace
-│
-├─ Components/
-│  ├─ Button.jsx
-│  ├─ Form/
-│  │  ├─ Input.jsx
-│  │  └─ Textarea.jsx
-│  ├─ Icons/
-│  └─ ... (compartidos entre módulos)
-│
-└─ Errors/
-   ├─ 404.jsx
-   ├─ 500.jsx
-   └─ 403.jsx
-```
+- suscriptores, importación y estados de consentimiento
 
-**Regla**: `resources/js/Pages/[Module]/[Feature]/[Component].jsx`
+### Community
 
----
+- comentarios, likes y moderación
 
-## 5. Server-Side Setup Contextualizado a Freetter
+### Delivery
 
-### 5.1 Shared Data Global (HandleInertiaRequests)
+- campañas, envío y estado de entrega
 
-Freetter tiene datos que **deben estar en todos los componentes**:
+### Activity
 
-```php
-// app/Http/Middleware/HandleInertiaRequests.php
+- logs, stream y alertas de auditoría
 
-namespace App\Http\Middleware;
+## Reglas de naming
 
-use Illuminate\Http\Request;
-use Inertia\Middleware;
+- usa nombres estables y legibles para páginas
+- el módulo debe ser visible en la ruta del componente
+- evita nombres genéricos como `Index` cuando no haya contexto
 
-class HandleInertiaRequests extends Middleware
-{
-    protected $rootView = 'app';
+## Validación recomendada
 
-    public function version(Request $request): ?string
-    {
-        return parent::version($request);
-    }
+- una ruta por módulo debe renderizar una página Inertia real
+- los controladores no deben mezclar Blade e Inertia en el mismo flujo
+- el root template debe ser único y consistente
 
-    public function share(Request $request): array
-    {
-        return array_merge(parent::share($request), [
-            // SHARED DATA GLOBAL
-            'auth' => [
-                'user' => $request->user(),
-            ],
+## Referencia cruzada
 
-            // CONTEXTO DE WORKSPACE (si existe en ruta)
-            'workspace' => $this->currentWorkspace($request),
-
-            // FLASH MESSAGES
-            'flash' => [
-                'success' => $request->session()->get('success'),
-                'error' => $request->session()->get('error'),
-                'info' => $request->session()->get('info'),
-            ],
-        ]);
-    }
-
-    protected function currentWorkspace(Request $request)
-    {
-        // Obtener workspace de la ruta actual
-        // Ej: /workspace/{workspace}/posts
-        $workspace = $request->route('workspace');
-
-        if (!$workspace) {
-            return null;
-        }
-
-        return [
-            'id' => $workspace->id,
-            'name' => $workspace->name,
-            'role' => auth()->user()?->roles($workspace)->first()?->name,
-            'members_count' => $workspace->members()->count(),
-        ];
-    }
-}
-```
-
-**En componentes, accede así**:
-
-```jsx
-import { usePage } from '@inertiajs/react'
+- [INERTIA_IMPLEMENTATION_GUIDE.md](INERTIA_IMPLEMENTATION_GUIDE.md)
+- [INERTIA_QUICKSTART.md](INERTIA_QUICKSTART.md)
+- [INERTIA_FILE_CHANGES.md](INERTIA_FILE_CHANGES.md)
 
 export default function PostIndex() {
     const { auth, workspace, flash } = usePage().props

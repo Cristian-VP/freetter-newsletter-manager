@@ -1,264 +1,67 @@
-# 🚀 INERTIA.JS V3 PARA FREETTER: GUÍA DE BIENVENIDA E ÍNDICE
-
-## Bienvenida
-
-He validado completamente tu arquitectura modular y preparado **una suite de 5 documentos** específicamente diseñados para integrar Inertia.js v3 **sin quebrar nada en tu backend**.
-
-Tu backend es sólido, testeado y listo. Ahora tienes una **hoja de ruta clara para el frontend**.
-
----
-
-## 📚 Los 5 Documentos (Nuevo Contexto)
-
-Todos en `/workspace/.context/`:
-
-### 1. 📖 **INERTIA_IMPLEMENTATION_GUIDE.md** (Guía Maestra)
-- **Rol**: Documento estratégico de referencia
-- **Audiencia**: Para entender el panorama completo
-- **Tiempo**: 30 minutos de lectura
-- **Qué incluye**:
-  - Visión general de Inertia.js v3
-  - Arquitectura de integración con tu estructura modular
-  - Roadmap de 8 fases
-  - Patrones específicos para Freetter
-  - Testing y deployment
-
-**👉 COMIENZA AQUÍ** si necesitas entender el contexto completo.
-
----
-
-### 2. 🎯 **INERTIA_QUICKSTART.md** (Implementación en 90 Minutos)
-- **Rol**: Guía paso a paso ejecutable
-- **Audiencia**: Para implementadores (es decir, tú ahora)
-- **Tiempo**: 90 minutos exactos
-- **Qué incluye**:
-  - 13 pasos con código exacto
-  - Verificación después de cada paso
-  - Troubleshooting rápido
-  - Tu primer componente React funcional
-
-**👉 SIGUE ESTO INMEDIATAMENTE** después de leer esto.
-
----
-
-### 3. 🗺️ **INERTIA_STUDY_MAP.md** (Documentación Oficial - Mapa)
-- **Rol**: Guía de qué leer de documentación oficial
-- **Audiencia**: Para aprender Inertia.js correctamente
-- **Tiempo**: 5-6 horas totales (distribuidas)
-- **Qué incluye**:
-  - 16 lecturas organizadas en 6 fases
-  - URLs directas a documentación v3
-  - Qué buscar en cada lectura
-  - Código a copiar-pegar
-  - Búsquedas específicas para problemas
-
-**👉 CONSULTA ESTO** cuando implementes componentes nuevos.
-
----
-
-### 4. 🏗️ **INERTIA_MODULAR_INTEGRATION.md** (Integración con Módulos)
-- **Rol**: Cómo integrar específicamente con tu arquitectura
-- **Audiencia**: Para developers en módulos específicos
-- **Tiempo**: 20-30 minutos (referencia)
-- **Qué incluye**:
-  - Cómo cada módulo retorna Inertia responses
-  - Estructura de Pages/ por módulo
-  - Shared data contextualizado a Freetter (workspace, permisos)
-  - Ejemplos de controladores + componentes
-  - Patrones modular específicos
-
-**👉 LEE ESTO** cuando empieces a trabajar en módulos específicos.
-
----
-
-### 5. 📋 **INERTIA_FILE_CHANGES.md** (Referencia de Cambios)
-- **Rol**: Qué archivos cambiarán y cómo
-- **Audiencia**: Para planificación y verificación
-- **Tiempo**: 10 minutos (consulta)
-- **Qué incluye**:
-  - Estructura antes/después
-  - Cambios exactos en archivos
-  - Checklist de archivos
-  - Orden recomendado de actualización
-
-**👉 CONSULTA ESTO** para ver qué puntos de cambio tienes.
-
----
-
-## 🎯 FLUJO RECOMENDADO DE USO
-
-### Momento 1: AHORA (30 min)
-```
-Lee: INERTIA_IMPLEMENTATION_GUIDE.md
-Objetivo: Entender qué harás, por qué, y cómo encaja con tu arq
-```
-
-### Momento 2: ESTA TARDE (90 min)
-```
-Sigue: INERTIA_QUICKSTART.md
-Objetivo: Tener Inertia.js funcionando en localhost:8000
-```
-
-### Momento 3: MIENTRAS DESARROLLAS (distribuido)
-```
-Consulta: INERTIA_STUDY_MAP.md (para aprender)
-Consulta: INERTIA_MODULAR_INTEGRATION.md (para módulos)
-Consulta: INERTIA_FILE_CHANGES.md (para verificar)
-Objetivo: Crear componentes + integrar módulos
-```
-
----
-
-## 🏆 Validación: Tu Arquitectura Modular
-
-He confirmado que tu arquitectura es **PERFECTA para Inertia.js**:
-
-### ✅ Lo que ya tienes bien
-
-1. **Módulos independientes con ownershipclaro**
-   - `identity/`, `publishing/`, `audience/`, etc.
-   - Cada uno es un bounded context
-   - Perfecto para componentes React por módulo
-
-2. **Controllers en lugar de controladores genéricos**
-   - Ya tienes `Http/Controllers/` en cada módulo
-   - Solo necesitan cambiar `return view()` → `return Inertia::render()`
-
-3. **Event-driven architecture**
-   - Los eventos no cambian
-   - Los listeners no cambian
-   - Todo sigue funcionando idéntico
-
-4. **Multitenant (workspace)**
-   - Crítico para Shared Data de Inertia
-   - Ya está modelado correctamente
-
-### ✅ Lo que **no cambia** en tu backend
-
-```
-❌ NO cambiarás modelos
-❌ NO cambiarás migraciones
-❌ NO cambiarás eventos
-❌ NO cambiarás rutas (mismo archivo, mismo contenido)
-❌ NO cambiarás lógica de negocio
-❌ NO cambiarás tests (solo agregar tests de Inertia)
-```
-
-### ✅ Lo único que cambias
-
-```
-✅ Controllers: return view() → return Inertia::render()
-✅ Middleware: Crear HandleInertiaRequests
-✅ Config: vite.config.js + bootstrap/app.php
-✅ Frontend: Crear Pages/, Layouts/, app.jsx
-```
-
----
-
-## 📊 Roadmap Visual
-
-```
-SEMANA 1: SETUP
-├─ Día 1: QUICKSTART (90 min) → Inertia funcionando
-├─ Día 2: Layouts + Shared Data (2 horas)
-└─ Día 3: Primer módulo (4-6 horas)
-
-SEMANA 2-3: MÓDULOS
-├─ Identity (auth, workspace) → 6 horas
-├─ Publishing (posts) → 6 horas
-├─ Audience (subscribers) → 4 horas
-├─ Delivery (campaigns) → 4 horas
-├─ Community (comments) → 3 horas
-└─ Activity (logs) → 2 horas
-
-SEMANA 4: OPTIMIZACIÓN + TESTING
-├─ Error pages (404, 500, 403)
-├─ Tests de integración
-├─ Performance (code splitting, SSR opcional)
-└─ Deploy
-```
-
-**Tiempo total estimado**: 40-50 horas (depende de complejidad UI)
-
----
-
-## 🚦 Decisiones Clave Que Ya Tomé Por Ti
-
-### 1. Framework: React (No Vue, No Svelte)
-- Comunidad más grande
-- Ecosistema más maduro
-- La documentación de Freetter se alinea mejor
-
-### 2. Shared Data Global Contextualizado
-- `auth` (usuario actual)
-- `workspace` (contexto actual)
-- `flash` (mensajes de éxito/error)
-
-### 3. Estructura de Componentes
-```
-Pages/[Module]/[Feature]/[Component].jsx
-Layouts/[LayoutType].jsx
-Components/[Generic].jsx
-```
-
-### 4. Patrón de Integración
-- Controllers retornan `Inertia::render()`
-- Componentes en `resources/js/Pages/`
-- Layouts persisten sin reload
-- Forms con validación automática
-
----
-
-## ❓ FAQ Rápido
-
-### P: ¿Mi backend Laravel tendrá que cambiar mucho?
-**R**: No. Solo controladores retornan JSON en lugar de HTML. Todo lo demás idéntico.
-
-### P: ¿Puedo mantener Blade paralelo a Inertia?
-**R**: Sí. Pero no necesitas. Inertia reemplaza completamente Blade para SPAs.
-
-### P: ¿Qué pasa con mi testing actual?
-**R**: Tests de backend siguen 100% igual. Agregará tests de React/Inertia.
-
-### P: ¿Necesito aprender React profundamente?
-**R**: Para MVP, no. Con STUDY_MAP aprendes lo necesario.
-
-### P: ¿Cuándo uso SSR?
-**R**: Post-MVP, para SEO y perceived performance. No necesario ahora.
-
-### P: ¿Puede uno controller tener tanto Blade como Inertia?
-**R**: Sí, pero se recomienda no mezclar. Migraciones completas por módulo.
-
----
-
-## ✅ Checklist: Antes de Empezar
-
-- [ ] Leí INERTIA_IMPLEMENTATION_GUIDE.md
-- [ ] Entiendo que mi backend NO va a cambiar significativamente
-- [ ] Entiendo la estructura PÁGINA/COMPONENTE
-- [ ] Estoy listo para 90 minutos ininterrumpidos el QUICKSTART
-- [ ] Tengo npm actualizado (`npm --version`)
-- [ ] Tengo Node 18+ (`node --version`)
-
----
-
-## 🚀 Comenzar Ahora
-
-### PASO 1 (30 min): Lectura Contextual
-```
-lee: /workspace/.context/INERTIA_IMPLEMENTATION_GUIDE.md
-```
-
-### PASO 2 (90 min): Implementación
-```
-sigue: /workspace/.context/INERTIA_QUICKSTART.md
-```
-
-### PASO 3 (Luego): Aprender + Modular
-```
-consulta: INERTIA_STUDY_MAP.md (cuando necesites ayuda)
-consulta: INERTIA_MODULAR_INTEGRATION.md (para módulos)
-referencia: INERTIA_FILE_CHANGES.md (para verificar)
+# INERTIA.JS V3 EN FREETTER
+
+## Punto de entrada
+
+Freetter integra **Inertia.js v3** como capa de presentación en un **monolito modular Laravel 12**. Inertia convierte controladores en productores de componentes React en lugar de Blade views, manteniendo la arquitectura modular sin introducir API separada.
+
+**¿Qué es Inertia?** Una alternativa moderna a Blade que permite escribir UI con React mientras el servidor sigue controlando las rutas y la navegación. No es una API REST—es una evolución de la arquitectura servidor-dirigida.
+
+## Navega por tu necesidad
+
+### 👉 Empezar rápido
+**Lee [INERTIA_QUICKSTART.md](INERTIA_QUICKSTART.md)** si necesitas validar que tu ambiente está listo:
+- Verifica que Inertia Laravel/React esté instalado
+- Revisa que middleware HandleInertiaRequests esté registrado
+- Comprueba que rutas carguen desde Service Providers
+- Confirma que vite.config.js está correcto
+
+### 👉 Crear una nueva página en tu módulo
+**Lee [INERTIA_MODULAR_INTEGRATION.md](INERTIA_MODULAR_INTEGRATION.md)** para entender:
+- Dónde viven las páginas React por módulo
+- Cómo nombrarlas con convención `module::page`
+- Cómo conectar rutas → controladores → componentes
+- Dónde compartir estado global
+
+### 👉 Aprender Inertia en profundidad
+**Consulta las docs oficiales:**
+- [Inertia.js docs](https://inertiajs.com) — Full reference
+- [Inertia React adapter](https://inertiajs.com/client-side-setup) — React patterns
+- [Inertia Laravel adapter](https://inertiajs.com/server-side-setup) — Laravel integration
+
+### 👉 Ver cómo se hizo la integración
+**Lee [INERTIA_FILE_CHANGES.md](INERTIA_FILE_CHANGES.md)** para referencia de:
+- Archivos que se crearon
+- Archivos que se modificaron
+- Dependencias que se agregaron
+
+## Principios de Freetter + Inertia
+
+| Aspecto | Regla |
+|---------|-------|
+| **Lógica de dominio** | Permanece en su módulo (Models, Services, Events) |
+| **Rutas** | Se cargan desde `app-modules/*/routes/web.php` via Service Provider |
+| **Páginas React** | Viven en `app-modules/<module>/resources/js/pages/` |
+| **Estado global** | Se define en `app/Http/Middleware/HandleInertiaRequests.php` |
+| **Controladores** | Devuelven `Inertia::render('module::page', [props])` en lugar de views |
+| **No cambia** | Modelos, migraciones, listeners, ownership de contextos |
+
+## Stack de versiones
+
+- **PHP** 8.4
+- **Laravel** 12
+- **Inertia Laravel** v3
+- **React** 19
+- **Vite** 7
+- **Tailwind** v4
+
+## Archivos clave del proyecto
+
+- Template root: `/workspace/resources/views/app.blade.php`
+- Entrada React: `/workspace/resources/js/app.tsx`
+- Middleware: `/workspace/app/Http/Middleware/HandleInertiaRequests.php`
+- Bootstrap: `/workspace/bootstrap/app.php`
+- Configuración Vite: `/workspace/vite.config.js`
+- Módulo ejemplo: `/workspace/app-modules/identity/`
 ```
 
 ---
