@@ -1,4 +1,57 @@
 @import "tailwindcss";
+@import "./satoshi.css";
+
+
+@layer utilities {
+  .satoshi-light {
+    font-family: var(--font-satoshi-l);
+  }
+
+  .satoshi-light-italic {
+    font-family: var(--font-satoshi-l-i);
+  }
+
+  .satoshi-regular {
+    font-family: var(--font-satoshi-r);
+  }
+
+  .satoshi-italic {
+    font-family: var(--font-satoshi-i);
+  }
+
+  .satoshi-medium {
+    font-family: var(--font-satoshi-m);
+  }
+
+  .satoshi-medium-italic {
+    font-family: var(--font-satoshi-m-i);
+  }
+
+  .satoshi-bold {
+    font-family: var(--font-satoshi-b);
+  }
+
+  .satoshi-bold-italic {
+    font-family: var(--font-satoshi-b-i);
+  }
+
+  .satoshi-black {
+    font-family: var(--font-satoshi-bl);
+  }
+
+  .satoshi-black-italic {
+    font-family: var(--font-satoshi-bl-i);
+  }
+
+  .satoshi-variable {
+    font-family: var(--font-satoshi-v);
+  }
+
+  .satoshi-variable-italic {
+    font-family: var(--font-satoshi-v-i);
+  }
+}
+
 
 @layer base {
   :root {
@@ -35,6 +88,18 @@
     --sidebar-accent-foreground: 0 0% 30%;
     --sidebar-border: 0 0% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    --font-satoshi-l: 'Satoshi-Light', sans-serif;
+    --font-satoshi-l-i: 'Satoshi-LightItalic', sans-serif;
+    --font-satoshi-r: 'Satoshi-Regular', sans-serif;
+    --font-satoshi-i: 'Satoshi-Italic', sans-serif;
+    --font-satoshi-m: 'Satoshi-Medium', sans-serif;
+    --font-satoshi-m-i: 'Satoshi-MediumItalic', sans-serif;
+    --font-satoshi-b: 'Satoshi-Bold', sans-serif;
+    --font-satoshi-b-i: 'Satoshi-BoldItalic', sans-serif;
+    --font-satoshi-bl: 'Satoshi-Black', sans-serif;
+    --font-satoshi-bl-i: 'Satoshi-BlackItalic', sans-serif;
+    --font-satoshi-v: 'Satoshi Variable', sans-serif;
+    --font-satoshi-v-i: 'Satoshi VariableItalic', sans-serif;
   }
 
   .dark {
