@@ -2,13 +2,26 @@
 
 namespace Domains\Publishing\Http\Requests;
 
+use Domains\Identity\Models\Membership;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StorePostRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        $user = $this->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        $workspaceId = (string) $this->route('workspace');
+
+        return Membership::query()
+            ->where('workspace_id', $workspaceId)
+            ->where('user_id', $user->id)
+            ->whereIn('role', ['owner', 'admin', 'editor', 'writer'])
+            ->exists();
     }
 
     /**

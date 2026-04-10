@@ -2,6 +2,7 @@
 
 namespace Domains\Publishing\Tests\Feature\Http;
 
+use Domains\Identity\Models\Membership;
 use Domains\Identity\Models\User;
 use Domains\Identity\Models\Workspace;
 use Domains\Publishing\Models\Post;
@@ -17,7 +18,13 @@ class PostControllerTest extends TestCase
         $workspace = Workspace::factory()->create();
         $author = User::factory()->create();
 
-        $response = $this->postJson('/publishing/workspaces/'.$workspace->id.'/posts', [
+        Membership::factory()
+            ->forUser($author)
+            ->forWorkspace($workspace)
+            ->writer()
+            ->create();
+
+        $response = $this->actingAs($author)->postJson('/publishing/workspaces/'.$workspace->id.'/posts', [
             'author_id' => $author->id,
             'title' => 'First Editorial Draft',
             'type' => 'newsletter',
@@ -40,12 +47,32 @@ class PostControllerTest extends TestCase
         ]);
     }
 
+    public function test_guest_cannot_create_post_draft_via_http(): void
+    {
+        $workspace = Workspace::factory()->create();
+        $author = User::factory()->create();
+
+        $response = $this->postJson('/publishing/workspaces/'.$workspace->id.'/posts', [
+            'author_id' => $author->id,
+            'title' => 'Unauthorized Draft',
+            'type' => 'newsletter',
+            'content' => [
+                'blocks' => [[
+                    'type' => 'paragraph',
+                    'data' => ['text' => 'Draft body'],
+                ]],
+            ],
+        ]);
+
+        $response->assertUnauthorized();
+    }
+
     public function test_can_publish_post_and_create_version_via_http(): void
     {
         $post = Post::factory()->draft()->create();
         $publisher = User::factory()->create();
 
-        $response = $this->postJson('/publishing/posts/'.$post->id.'/publish', [
+        $response = $this->actingAs($publisher)->postJson('/publishing/posts/'.$post->id.'/publish', [
             'published_by_user_id' => $publisher->id,
         ]);
 

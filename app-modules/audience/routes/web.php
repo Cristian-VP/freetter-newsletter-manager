@@ -10,6 +10,8 @@ Route::prefix('audience')->name('audience.')->group(function (): void {
     Route::get('/unsubscribe/{token}', [SubscriberController::class, 'unsubscribe'])
         ->name('unsubscribe');
 
-    Route::post('/workspaces/{workspace}/imports', [ImportJobController::class, 'store'])
-        ->name('workspaces.imports.store');
+    Route::middleware('auth')->group(function (): void {
+        Route::post('/workspaces/{workspace}/imports', [ImportJobController::class, 'store'])
+            ->name('workspaces.imports.store');
+    });
 });
