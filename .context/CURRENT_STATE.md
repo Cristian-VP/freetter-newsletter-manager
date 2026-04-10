@@ -75,6 +75,92 @@ Este documento describe el estado real del repositorio hoy: avance funcional, br
 - qué riesgos nuevos aparecieron:
     - Ninguno relevante para Community en este release.
 
+## 0.4. Actualización Incremental (09-04-2026)
+- fecha: 9 de abril de 2026
+- qué cambió realmente en código:
+    - Se implementó el flujo de autenticación por Magic Link en `identity` con endpoints `POST /register`, `POST /login` y `GET /magic-links/{user}` con firma temporal.
+    - Se agregó `MagicLinkAuthController` para registro/login sin contraseña, generación de URL firmada temporal, verificación de email al consumir el link e inicio de sesión en guard `web`.
+    - Se agregaron `RegisterMagicLinkRequest` y `LoginMagicLinkRequest` para validación de entrada.
+    - Se creó `MagicLinkNotification` para envío del enlace por correo.
+    - Se conectó Landing con `AuthModal` para Sign in / Sign up y se añadió feedback visual de éxito al enviar el formulario.
+    - Se protegió `GET /home` con middleware `auth` y se dejó una confirmación visual en Home con el usuario autenticado.
+    - Se removió `throttle` en `/register` y `/login` para evitar 500 en entornos donde RateLimiter usa cache en DB sin tabla `cache`.
+- validación ejecutada:
+    - `vendor/bin/pint --dirty --format agent` -> pass
+    - `php artisan test --compact app-modules/identity/tests/Feature/Http/MagicLinkAuthenticationTest.php tests/Feature/HomeRouteProtectionTest.php` -> 7 pasaron (21 assertions)
+    - `php artisan test --compact tests/Feature app-modules/activity/tests app-modules/audience/tests app-modules/community/tests app-modules/delivery/tests app-modules/identity/tests app-modules/publishing/tests` -> 152 pasaron (325 assertions)
+- qué riesgos se cerraron:
+    - Se cerró el gap funcional de autenticación inicial Landing -> Magic Link -> sesión -> Home.
+    - Se cerró el error 500 en `/register` causado por dependencia de cache DB en `ThrottleRequests`.
+- qué riesgos nuevos aparecieron:
+    - El envío real de correo no está activo por configuración de entorno (`mail.default = log`), por lo que actualmente los correos se registran en logs y no se envían a proveedores externos.
+- qué se debe hacer para operar correo real (pendiente de entorno):
+    1. Configurar `MAIL_MAILER=smtp` (o proveedor transaccional equivalente) en `.env`.
+    2. Configurar credenciales reales (`MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`, `MAIL_ENCRYPTION`, `MAIL_FROM_ADDRESS`, `MAIL_FROM_NAME`).
+    3. Limpiar y recargar configuración (`php artisan config:clear`).
+    4. Probar flujo completo con correo real y revisar carpeta spam/promotions en Gmail.
+    5. En producción, restaurar rate limiting para `/register` y `/login` usando un backend de cache operativo (redis o tabla `cache`).
+
+### 0.4.1 Cierre de Hallazgo Guardian (09-04-2026)
+- qué cambió realmente en código:
+    - Se implementó rate limiting persistente en Identity sin dependencia del driver global de cache, usando tabla `identity_magic_link_requests`.
+    - Se actualizó `MagicLinkAuthController` para bloquear solicitudes de magic link por IP/email tras 6 intentos en 1 minuto (HTTP 429).
+    - Se añadió test de límite de tasa en `MagicLinkAuthenticationTest`.
+- validación ejecutada:
+    - `vendor/bin/pint --dirty --format agent` -> pass
+    - `php artisan test --compact app-modules/identity/tests/Feature/Http/MagicLinkAuthenticationTest.php tests/Feature/HomeRouteProtectionTest.php` -> 8 pasaron (28 assertions)
+- riesgos cerrados:
+    - Se cerró el blocker de seguridad identificado en reviewer por ausencia de limitación de intentos en `/register` y `/login`.
+- riesgos vigentes:
+    - El correo real sigue pendiente de configuración de entorno (`MAIL_MAILER` no SMTP real).
+
+### 0.4.2 Endurecimiento de Magic Link Single-Use (09-04-2026)
+- qué cambió realmente en código:
+    - Se implementó consumo de magic link de un solo uso en `MagicLinkAuthController` con validación por token firmado + token persistido.
+    - Se agregó migración `create_identity_magic_link_tokens_table` para persistir hash de token, expiración y estado de consumo (`consumed_at`).
+    - La autenticación por magic link ahora rechaza reutilización del mismo enlace (HTTP 403) y solo permite el primer consumo válido.
+    - Se mantuvo el rate limiting de solicitudes por email/IP para `POST /register` y `POST /login`.
+- validación ejecutada:
+    - `vendor/bin/pint --dirty --format agent` -> pass
+    - `php artisan test --compact app-modules/identity/tests/Feature/Http/MagicLinkAuthenticationTest.php tests/Feature/HomeRouteProtectionTest.php` -> 10 pasaron (38 assertions)
+- riesgos cerrados:
+    - Se cerró el riesgo de seguridad por reutilización de magic links dentro de la ventana de expiración.
+    - Se amplió cobertura contra abuso con test de rate limit por IP usando emails distintos.
+- riesgos vigentes:
+    - El correo real sigue pendiente de configuración de entorno (`MAIL_MAILER` no SMTP real).
+
+## 0.5. Actualización Incremental (10-04-2026)
+
+- fecha: 10 de abril de 2026
+- qué cambió realmente en código y entorno:
+    - Se activó envío real de correo transaccional con Resend (`MAIL_MAILER=resend`) y dominio `freetter.app` verificado en proveedor.
+    - Se instaló el SDK requerido por Laravel para el transport `resend` (`resend/resend-php`) y se resolvió el error `Class "Resend" not found`.
+    - Se creó la migración de tabla de caché (`create_cache_table`) para soportar `CACHE_STORE=database` y eliminar errores SQL por relación `cache` inexistente.
+    - Se aplicaron migraciones pendientes del flujo Magic Link (`identity_magic_link_requests` e `identity_magic_link_tokens`) para corregir 500 en `POST /register` y `POST /login`.
+    - Se corrigió el fallo de redirección/autenticación al consumir Magic Link por incompatibilidad de tipos en sesión (`sessions.user_id` bigint vs `identity_users.id` uuid), pasando `sessions.user_id` a `uuid` mediante migración.
+- validación ejecutada:
+    - `php artisan migrate:status --no-interaction` -> migraciones pendientes detectadas y luego en estado `Ran`.
+    - `php artisan migrate --no-interaction` -> tablas de Magic Link, cache y ajuste de sesiones aplicadas.
+    - `php artisan optimize:clear` -> pass tras creación de tabla `cache`.
+    - `php artisan tinker --execute='...Resend::client(...)->emails->send(...)...'` -> pass con respuesta `{ id: ... }`.
+    - `php artisan test --compact app-modules/identity/tests/Feature/Http/MagicLinkAuthenticationTest.php` -> 8 pasaron (35 assertions).
+- qué riesgos se cerraron:
+    - Se cerró el blocker de correo real: el flujo ya envía emails reales y no solo logs.
+    - Se cerraron los 500 en autenticación por faltantes de esquema (tablas de rate-limit/token/cache).
+    - Se cerró el 500 en consumo de Magic Link por mismatch de tipo de `user_id` en sesiones.
+- qué riesgos nuevos aparecieron:
+    - No se detectan riesgos nuevos críticos en el flujo Landing -> Magic Link -> Sesión -> Home.
+- riesgos vigentes:
+    - Mantener rotación y custodia de API keys (se expuso una key durante troubleshooting y fue regenerada).
+    - Pendiente de operación: separar `.env` por entorno (local vs producción) para `APP_URL`, mailer y credenciales.
+    - Pendiente técnico-operativo: implementar colas para envío de correo transaccional (Magic Link) y ejecutar workers en entorno productivo para desacoplar latencia y mejorar resiliencia.
+
+- qué se debe implementar a continuación (recomendado):
+    1. Convertir `MagicLinkNotification` a envío en cola (`ShouldQueue`) para que el login/register no dependa del tiempo de respuesta del proveedor de correo.
+    2. Definir y versionar configuración de cola por entorno (`QUEUE_CONNECTION`) con backend operativo (Redis o database + workers supervisados).
+    3. Operar workers en producción (`queue:work` con supervisión/restart) y monitoreo de jobs fallidos.
+    4. Añadir pruebas de integración para validar dispatch y procesamiento de notificaciones en cola.
+
 ## 1. Resumen Ejecutivo
 
 Freetter tiene dirección de producto y arquitectura bien definida en `.context`, pero la implementación está incompleta y heterogénea entre módulos.

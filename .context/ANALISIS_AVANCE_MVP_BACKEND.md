@@ -48,6 +48,36 @@ Con base en `CURRENT_STATE.md` y validaciones recientes:
 - `delivery`: MVP implementado para campañas, webhooks de rebote e integración con audience/activity.
 - `activity`: auditoría transversal operativa, utilizada como destino de trazabilidad de eventos críticos.
 
+### 3.3 Roles y permisos del MVP
+
+El proyecto distingue entre roles definidos en modelo de negocio y permisos efectivamente aplicados por el backend actual.
+
+#### Roles definidos
+
+- `owner`, `admin`, `editor`, `viewer`, `writer` en membresías de workspace.
+- `admin`, `editor`, `writer` en invitaciones.
+
+#### Matriz funcional esperada por dominio
+
+| Dominio | Rol / actor | Acciones esperadas |
+| --- | --- | --- |
+| Identity | `owner` | Crear workspace, invitar colaboradores, transferir ownership, cambiar roles, revocar miembros |
+| Identity | `admin` | Invitar colaboradores, cambiar roles, revocar miembros; no puede elevar a otro miembro a `owner` |
+| Identity | `editor` / `writer` / `viewer` | Participación según alcance del workspace; sin privilegios administrativos de identidad |
+| Publishing | `writer` | Crear borradores y subir media |
+| Publishing | `editor` | Crear borradores, subir media, publicar y programar publicaciones |
+| Publishing | `admin` / `owner` | Crear borradores, subir media, publicar y programar publicaciones |
+| Community | `owner` / `admin` / `editor` | Moderar comentarios |
+| Audience | Visitante o usuario autenticado | Suscribirse y desuscribirse |
+| Delivery | Miembro del workspace | Consultar campañas y disparar envío, sujeto a acceso al workspace |
+
+#### Aplicación real del backend hoy
+
+- La moderación de comentarios sí aplica una verificación explícita de `owner|admin|editor`.
+- Los grupos de rutas de `identity`, `publishing`, `audience` y `delivery` no están protegidos por middleware de autenticación a nivel de ruta en el estado actual.
+- Varios `FormRequest::authorize()` retornan `true`, por lo que la restricción por rol todavía está más documentada que enforced en varias entradas.
+- En `delivery`, el acceso a campañas valida membresía del workspace, pero no distingue por rol.
+
 ## 4. Objetivos técnicos cumplidos en la iteración validada
 
 1. Estabilización de pruebas críticas de integración interdominio (Identity → Activity).
@@ -139,6 +169,8 @@ Además, en iteraciones previas de estabilización se validaron suites de `tests
 2. Hay casos de uso avanzados con cobertura parcial (principalmente reglas de ownership avanzado en Identity y validaciones profundas en Publishing scheduling/versioning).
 
 3. La base backend del MVP está operativa; la expansión recomendada es de robustez y edge cases, no de funcionalidad base.
+
+4. Existe una brecha entre la matriz de permisos esperada por negocio y el enforcement técnico actual en algunos endpoints de `identity`, `publishing`, `audience` y `delivery`; esto no impide la operación del MVP, pero sí conviene cerrarlo en una siguiente iteración.
 
 ## 8. Conclusión de estado
 
