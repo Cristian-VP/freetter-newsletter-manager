@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 use App\Http\Controllers\Settings\PasswordController;
@@ -10,21 +11,25 @@ use Inertia\Inertia;
 // Landing Page Pública - Redirige a Dashboard si está autenticado
 Route::get('/', function () {
     if (Auth::check()) {
-        return redirect()->route('dashboard');
+        return redirect()->route('home');
     }
-    return Inertia::render('Landing');
-})->name('home');
 
-// Dashboard - Solo para usuarios autenticados
+    return Inertia::render('Landing');
+})->name('landing');
+
+// Solo para usuarios autenticados
 Route::middleware('auth')->group(function () {
+    Route::get('/home', function () {
+        return Inertia::render('Home');
+    })->name('home');
+
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');
 
-/**
- * Example Routes for Adapting to My Project
- *
- */
+    /**
+     * Example Routes for Adapting to My Project
+     */
     // Route::redirect('settings', 'settings/profile');
 
     // Route::get('settings/profile', [ProfileController::class, 'edit'])->name('profile.edit');
