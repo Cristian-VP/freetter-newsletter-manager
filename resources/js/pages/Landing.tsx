@@ -1,9 +1,13 @@
 import { useState } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { useIsMobile } from '../hooks/use-mobile';
+import { AuthModal } from '../components/auth-modal';
 
 export default function Landing() {
+    const isMobile = useIsMobile();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const [isAuthOpen, setIsAuthOpen] = useState(false);
+    const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
     const { url } = usePage();
 
     // Helper para determinar si el link está activo
@@ -33,13 +37,16 @@ export default function Landing() {
                         border-b
                         border-black
                     "
-                    onClick= { () => isMobileMenuOpen && setIsMobileMenuOpen(false) }
+                    onClick={() => {
+                        if (isMobileMenuOpen) setIsMobileMenuOpen(false);
+                        if (isAuthOpen) setIsAuthOpen(false);
+                    }}
                 >
 
                     <div className="flex items-center px-6 lg:px-12">
-                        <div className="satoshi-bold text-4xl tracking-tight">
+                        <Link href="/" className="satoshi-bold text-4xl tracking-tight">
                             Freetter
-                        </div>
+                        </Link>
                     </div>
 
                     <div className="flex items-center">
@@ -64,12 +71,18 @@ export default function Landing() {
                             <Link href="#" className="hidden text-zinc-600 hover:text-black lg:block">
                                 Write
                             </Link>
-                            <Link href="#" className="hidden text-zinc-600 hover:text-black lg:block">
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setAuthMode('signin'); setIsAuthOpen(true); }}
+                                className="hidden text-zinc-600 hover:text-black lg:block"
+                            >
                                 Sign in
-                            </Link>
-                            <Link href="#" className="hidden md:rounded-full text-zinc-200 md:bg-black transition hover:bg-zinc-800 hover:text-zinc-100 md:px-4 md:py-2 md:block shrink-0">
+                            </button>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); setAuthMode('signup'); setIsAuthOpen(true); }}
+                                className="hidden md:rounded-full text-zinc-200 md:bg-black transition hover:bg-zinc-800 hover:text-zinc-100 md:px-4 md:py-2 md:block shrink-0"
+                            >
                                 Get started
-                            </Link>
+                            </button>
                         </nav>
 
                         <div className="flex h-full lg:hidden ">
@@ -78,6 +91,7 @@ export default function Landing() {
                                 aria-label={isMobileMenuOpen ? "Close menu" : "Open main menu"}
                                 onClick={(e) => {
                                     e.stopPropagation();
+                                    setIsAuthOpen(false);
                                     setIsMobileMenuOpen(!isMobileMenuOpen);
                                 }}
                                 className={`flex h-full w-20 items-center justify-center transition-colors ${
@@ -127,12 +141,16 @@ export default function Landing() {
                         <p className="mb-10 satoshi-medium text-xl tracking-tight text-zinc-700 sm:text-2xl">
                             A place to read, write, and discover stories.
                         </p>
-                        <Link
-                            href="#"
-                            className="inline-block rounded-full bg-black px-8 py-3 text-lg satoshi-regular text-white transition hover:bg-zinc-800"
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                setAuthMode(isMobile ? "signup" : "signin");
+                                setIsAuthOpen(true);
+                            }}
+                            className="inline-block rounded-lg bg-black px-8 py-3 text-lg satoshi-regular text-white transition hover:bg-zinc-800"
                         >
-                            {useIsMobile() ? "Get started" : "Start reading"}
-                        </Link>
+                            {isMobile ? "Get started" : "Start reading"}
+                        </button>
                     </div>
                 </main>
 
@@ -159,6 +177,7 @@ export default function Landing() {
                     <Link href="#" className="hover:text-zinc-900 transition">Privacy</Link>
                     <Link href="#" className="hover:text-zinc-900 transition">Terms</Link>
                 </footer>
+                <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} initialMode={authMode} />
             </div>
         </>
     );
