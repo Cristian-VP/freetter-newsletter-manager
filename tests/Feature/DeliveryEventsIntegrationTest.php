@@ -25,7 +25,7 @@ class DeliveryEventsIntegrationTest extends TestCase
             'author_id' => $author->id,
         ]);
 
-        $response = $this->postJson('/publishing/posts/'.$post->id.'/publish', [
+        $response = $this->actingAs($author)->postJson('/publishing/posts/'.$post->id.'/publish', [
             'published_by_user_id' => $author->id,
         ]);
 

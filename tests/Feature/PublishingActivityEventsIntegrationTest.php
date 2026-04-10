@@ -16,7 +16,7 @@ class PublishingActivityEventsIntegrationTest extends TestCase
         $post = Post::factory()->draft()->create();
         $publisher = User::factory()->create();
 
-        $this->postJson('/publishing/posts/'.$post->id.'/publish', [
+        $this->actingAs($publisher)->postJson('/publishing/posts/'.$post->id.'/publish', [
             'published_by_user_id' => $publisher->id,
         ])->assertOk();
 

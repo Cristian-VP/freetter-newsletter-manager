@@ -4,6 +4,7 @@ namespace Domains\Delivery\Tests\Feature;
 
 use Domains\Delivery\Jobs\SendCampaignJob;
 use Domains\Delivery\Models\Campaign;
+use Domains\Identity\Models\Membership;
 use Domains\Identity\Models\User;
 use Domains\Identity\Models\Workspace;
 use Domains\Publishing\Events\PostPublished;
@@ -42,6 +43,13 @@ class DeliveryCampaignTest extends TestCase
     {
         $workspace = Workspace::factory()->create();
         $author = User::factory()->create();
+
+        Membership::factory()
+            ->forUser($author)
+            ->forWorkspace($workspace)
+            ->writer()
+            ->create();
+
         $post = Post::factory()->newsletter()->create([
             'workspace_id' => $workspace->id,
             'author_id' => $author->id,
@@ -59,9 +67,28 @@ class DeliveryCampaignTest extends TestCase
             ],
         ]);
 
-        $response = $this->getJson('/delivery/campaigns/'.$workspace->id);
+        $response = $this->actingAs($author)->getJson('/delivery/campaigns/'.$workspace->id);
 
         $response->assertOk();
         $response->assertJsonPath('data.0.id', $campaign->id);
+    }
+
+    public function test_guest_cannot_list_workspace_campaigns(): void
+    {
+        $workspace = Workspace::factory()->create();
+
+        $response = $this->getJson('/delivery/campaigns/'.$workspace->id);
+
+        $response->assertUnauthorized();
+    }
+
+    public function test_non_member_cannot_list_workspace_campaigns(): void
+    {
+        $workspace = Workspace::factory()->create();
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->getJson('/delivery/campaigns/'.$workspace->id);
+
+        $response->assertForbidden();
     }
 }

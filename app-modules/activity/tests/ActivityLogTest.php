@@ -5,8 +5,8 @@ namespace Domains\Activity\Tests\Feature;
 use Domains\Activity\Models\ActivityLog;
 use Domains\Identity\Models\User;
 use Illuminate\Database\Eloquent\Model;
-use Tests\TestCase;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class ActivityLogTest extends TestCase
 {
@@ -85,7 +85,7 @@ class ActivityLogTest extends TestCase
 
         $this->assertCount(3, $logs);
         $this->assertTrue($logs->every(
-            fn($log) => $log->entity_type === 'post' && $log->entity_id === $postId
+            fn ($log) => $log->entity_type === 'post' && $log->entity_id === $postId
         ));
     }
 
@@ -119,10 +119,12 @@ class ActivityLogTest extends TestCase
     {
         ActivityLog::factory()
             ->postPublished()
+            ->systemAction()
             ->count(10)
             ->create();
 
         ActivityLog::factory()
+            ->systemAction()
             ->count(5)
             ->create();
 

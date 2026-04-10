@@ -65,10 +65,7 @@ class CampaignController extends Controller
     private function ensureWorkspaceAccess(Request $request, string $workspaceId): void
     {
         $user = $request->user();
-
-        if (! $user) {
-            return;
-        }
+        abort_unless($user, 401);
 
         $isMember = Membership::query()
             ->where('workspace_id', $workspaceId)

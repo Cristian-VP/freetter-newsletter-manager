@@ -27,7 +27,7 @@ class ImportSubscribersTest extends TestCase
 
         $file = UploadedFile::fake()->createWithContent('import.csv', "email,name\nuser1@example.com,User One\n");
 
-        $response = $this->postJson('/audience/workspaces/'.$workspace->id.'/imports', [
+        $response = $this->actingAs($user)->postJson('/audience/workspaces/'.$workspace->id.'/imports', [
             'created_by_user_id' => $user->id,
             'file' => $file,
         ]);
@@ -42,6 +42,22 @@ class ImportSubscribersTest extends TestCase
         ]);
 
         Queue::assertPushed(ProcessSubscriberImportJob::class);
+    }
+
+    public function test_guest_cannot_create_import_job(): void
+    {
+        Storage::fake('local');
+
+        $workspace = Workspace::factory()->create();
+        $user = User::factory()->create();
+        $file = UploadedFile::fake()->createWithContent('import.csv', "email,name\nuser1@example.com,User One\n");
+
+        $response = $this->postJson('/audience/workspaces/'.$workspace->id.'/imports', [
+            'created_by_user_id' => $user->id,
+            'file' => $file,
+        ]);
+
+        $response->assertUnauthorized();
     }
 
     public function test_import_csv_processes_valid_rows_and_errors(): void
@@ -66,7 +82,7 @@ class ImportSubscribersTest extends TestCase
 
         $file = UploadedFile::fake()->createWithContent('mixed.csv', $csv);
 
-        $response = $this->postJson('/audience/workspaces/'.$workspace->id.'/imports', [
+        $response = $this->actingAs($user)->postJson('/audience/workspaces/'.$workspace->id.'/imports', [
             'created_by_user_id' => $user->id,
             'file' => $file,
         ]);
