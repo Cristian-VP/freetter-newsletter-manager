@@ -2,7 +2,7 @@
 
 ## Fecha de corte
 
-17 de marzo de 2026.
+16 de abril de 2026.
 
 Este documento describe el estado real del repositorio hoy: avance funcional, brechas tecnicas y prioridades inmediatas.
 
@@ -161,6 +161,33 @@ Este documento describe el estado real del repositorio hoy: avance funcional, br
     3. Operar workers en producción (`queue:work` con supervisión/restart) y monitoreo de jobs fallidos.
     4. Añadir pruebas de integración para validar dispatch y procesamiento de notificaciones en cola.
 
+## 0.6. Actualización Incremental UI Root Resources (16-04-2026)
+
+- fecha: 16 de abril de 2026
+- alcance analizado:
+    - Se auditó `resources/` del root (CSS, fonts, páginas React Inertia, componentes de navegación, layouts y `resources/views/app.blade.php`).
+    - Se revisó historial de commits sobre `resources/` para consolidar hitos reales de UI entre 08-04 y 16-04.
+- qué cambió realmente en código de UI:
+    - Se consolidó el shell frontend con Inertia React en root (`resources/js/app.tsx`) y carga dinámica de páginas de root y módulos desde `resources/views/app.blade.php`.
+    - Se implementó Landing con dirección visual definida (paleta crema/negro), hero principal, header/footer responsive, menú móvil fullscreen y CTA conectados al flujo de autenticación.
+    - Se integró `AuthModal` en Landing para Sign in / Sign up por magic link (`/login` y `/register`) con feedback de envío exitoso.
+    - Se implementó layout autenticado responsive (`AuthenticatedHomeLayout`) con:
+        - header móvil superior,
+        - toolbar móvil inferior,
+        - navegación lateral desktop expandible,
+        - menú de cuenta con accesos a dashboard/settings y logout.
+    - Se añadieron páginas base de experiencia autenticada en root: `Home`, `Dashboard` (propuesta inicial) y `Settings` (template inicial).
+    - Se incorporó tipografía Satoshi completa en `resources/css/satoshi.css`, assets de fuentes en `resources/fonts/satoshi/` y utilidades tipográficas en `resources/css/app.css`.
+- validación ejecutada:
+    - `npm run build` -> pass (Vite compiló correctamente assets/páginas de `Landing`, `Home`, `Settings`, `Dashboard` y layouts/componentes de navegación).
+    - Estado de tests backend identity mantenido en verde en la sesión (`php artisan test --compact app-modules/identity/tests/Feature/Http/MagicLinkAuthenticationTest.php` -> pass).
+- qué riesgos se cerraron:
+    - Se cierra la percepción de que el avance en ramas tipo `feature/FRT-11` y `feature/FRT-12` es solo backend: existe avance tangible de UI en root resources con flujo Landing -> AuthModal -> Home autenticado.
+- qué riesgos nuevos aparecieron:
+    - No hay aún pruebas E2E/UI automáticas para navegación responsive ni flujo visual de autenticación.
+    - `Dashboard` y `Settings` permanecen en estado base/propuesta (sin casos de negocio completos).
+    - Persisten links placeholder en Landing (`/membership`, `/write`) sin rutas funcionales confirmadas.
+
 ## 1. Resumen Ejecutivo
 
 Freetter tiene dirección de producto y arquitectura bien definida en `.context`, pero la implementación está incompleta y heterogénea entre módulos.
@@ -171,6 +198,7 @@ Estado general:
 - `identity`: base funcional parcial con desajustes entre migraciones, modelos y factories
 - `publishing`: estructura inicial creada, con errores de integridad en esquema y relaciones
 - `audience`, `delivery`, `community`: MVP implementado con integración por eventos
+- UI root resources: base frontend Inertia React operativa con Landing, modal de autenticación, navegación responsive mobile/desktop y vistas autenticadas iniciales (`Home`, `Dashboard`, `Settings`)
 
 ## 2. Inventario Objetivo Por Modulo
 
