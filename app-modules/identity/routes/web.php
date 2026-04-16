@@ -13,6 +13,10 @@ Route::post('/login', [MagicLinkAuthController::class, 'login'])
     ->middleware('web')
     ->name('login.magic-link');
 
+Route::post('/logout', [MagicLinkAuthController::class, 'logout'])
+    ->middleware(['web', 'auth'])
+    ->name('logout');
+
 Route::get('/login', static fn () => redirect()->route('landing'))
     ->middleware('web')
     ->name('login');

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { useIsMobile } from '../hooks/use-mobile';
 import { AuthModal } from '../components/auth-modal';
+import { BurgerMenuButton } from '@/components/navigation/burger-menu-button';
 
 export default function Landing() {
     const isMobile = useIsMobile();
@@ -86,32 +87,20 @@ export default function Landing() {
                         </nav>
 
                         <div className="flex h-full lg:hidden ">
-                            <button
-                                type="button"
-                                aria-label={isMobileMenuOpen ? "Close menu" : "Open main menu"}
+                            <BurgerMenuButton
+                                isOpen={isMobileMenuOpen}
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setIsAuthOpen(false);
                                     setIsMobileMenuOpen(!isMobileMenuOpen);
                                 }}
-                                className={`flex h-full w-20 items-center justify-center transition-colors ${
-                                    isMobileMenuOpen
-                                        ? 'bg-[#0f0f0f] text-white hover:bg-black'
-                                        : 'text-zinc-900 hover:bg-black/5'
-                                }`}
-                            >
-                                <span className="sr-only">{isMobileMenuOpen ? 'Close menu' : 'Open main menu'}</span>
-                                {isMobileMenuOpen ? (
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true" className="size-8">
-                                        <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
-                                ) : (
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true" className="size-8 ">
-                                        <path d="M1 9h22" strokeLinecap="round" />
-                                        <path d="M1 15h22" strokeLinecap="round" />
-                                    </svg>
-                                )}
-                            </button>
+                                className="h-full w-20 rounded-none"
+                                openClassName="bg-[#0f0f0f] text-white hover:bg-black"
+                                closedClassName="text-zinc-900 hover:bg-black/5"
+                                iconClassName="size-8"
+                                ariaLabelOpen="Open main menu"
+                                ariaLabelClose="Close menu"
+                            />
                         </div>
                     </div>
                 </header>
