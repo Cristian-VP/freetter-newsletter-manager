@@ -173,4 +173,20 @@ class MagicLinkAuthenticationTest extends TestCase
 
         $response->assertStatus(429);
     }
+
+    public function test_logout_invalidates_session_and_requires_new_authentication(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->createOne();
+
+        $this->actingAs($user);
+        $this->assertAuthenticatedAs($user);
+
+        $response = $this->post(route('logout'));
+
+        $response->assertRedirect(route('landing'));
+        $this->assertGuest();
+
+        $this->get('/home')->assertRedirect(route('login'));
+    }
 }
