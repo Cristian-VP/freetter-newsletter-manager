@@ -23,6 +23,10 @@ Route::middleware('auth')->group(function () {
         return Inertia::render('Home');
     })->name('home');
 
+    Route::get('/settings', function () {
+        return Inertia::render('Settings');
+    })->name('settings');
+
     Route::get('/dashboard', function () {
         return Inertia::render('Dashboard');
     })->name('dashboard');
