@@ -36,12 +36,13 @@ use Domains\Delivery\Events\CampaignSendingStarted;
 use Domains\Delivery\Events\DeliveryBounceReceived;
 use Domains\Delivery\Listeners\CreateDeliveryCampaignOnPublish;
 use Domains\Identity\Events\MembershipCreated;
+use Domains\Identity\Events\UserEmailVerified;
 // ─────────────────────────────────────────────────────────────────
 // LISTENERS de Activity
 // ─────────────────────────────────────────────────────────────────
-use Domains\Identity\Events\UserEmailVerified;
 use Domains\Identity\Events\UserRegistered;
 use Domains\Identity\Events\WorkspaceCreated;
+use Domains\Identity\Listeners\ProvisionDefaultWorkspaceOnUserRegistered;
 use Domains\Publishing\Events\PostPublished;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
@@ -67,6 +68,7 @@ class EventServiceProvider extends ServiceProvider
 
         UserRegistered::class => [
             LogUserRegistered::class,
+            ProvisionDefaultWorkspaceOnUserRegistered::class,
             // Activity: registrar auditoría
             // Futuro: SendWelcomeEmail::class,
             // Futuro: TrackUserSignup::class,

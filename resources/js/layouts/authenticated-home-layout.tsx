@@ -10,21 +10,30 @@ import { useState } from "react";
 
 interface AuthenticatedHomeLayoutProps {
   children: React.ReactNode;
+  onCreateClick?: () => void;
 }
 
-export default function AuthenticatedHomeLayout({ children }: AuthenticatedHomeLayoutProps) {
+export default function AuthenticatedHomeLayout({ children, onCreateClick }: AuthenticatedHomeLayoutProps) {
   const { auth } = usePage<PageProps>().props;
   const [activeItem, setActiveItem] = useState<HomeNavItemKey>("home");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDesktopExpanded, setIsDesktopExpanded] = useState(false);
   const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false);
 
+  const handlePostCreateClick = () => {
+    onCreateClick?.();
+  };
+
+  const handleSelect = (item: HomeNavItemKey) => {
+    setActiveItem(item);
+  };
+
   return (
     <div className="min-h-screen bg-[#F7F4ED] text-zinc-900">
       <MobileTopHeader
         isMenuOpen={isMobileMenuOpen}
         onMenuToggle={() => setIsMobileMenuOpen((value) => !value)}
-        onCreateClick={() => setActiveItem("create")}
+        onCreateClick={handlePostCreateClick}
       />
 
       <DesktopSideNav
@@ -34,7 +43,8 @@ export default function AuthenticatedHomeLayout({ children }: AuthenticatedHomeL
         onMouseEnter={() => setIsDesktopExpanded(true)}
         onMouseLeave={() => setIsDesktopExpanded(false)}
         onToggleMenu={() => setIsDesktopMenuOpen((value) => !value)}
-        onSelect={setActiveItem}
+        onCreatePostClick={handlePostCreateClick}
+        onSelect={handleSelect}
         userName={auth.user?.name}
         userAvatar={auth.user?.avatar}
       />
@@ -51,7 +61,7 @@ export default function AuthenticatedHomeLayout({ children }: AuthenticatedHomeL
 
       <MobileBottomToolbar
         activeItem={activeItem}
-        onSelect={setActiveItem}
+        onSelect={handleSelect}
         userName={auth.user?.name}
         userAvatar={auth.user?.avatar}
       />
