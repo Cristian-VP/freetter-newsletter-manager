@@ -2,16 +2,16 @@
 
 namespace Domains\Publishing\Models;
 
+use Domains\Identity\Models\User;
+use Domains\Identity\Models\Workspace;
 use Domains\Publishing\Database\Factories\PostFactory;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Database\Eloquent\Builder;
-use Domains\Identity\Models\Workspace;
-use Domains\Identity\Models\User;
 
 class Post extends Model
 {
@@ -29,6 +29,7 @@ class Post extends Model
         'content',
         'excerpt',
         'carbon_score',
+        'published_at',
     ];
 
     protected $casts = [
@@ -98,8 +99,7 @@ class Post extends Model
         return $query->where('type', $type);
     }
 
-    //Helper methods
-
+    // Helper methods
 
     public function getAuthorID(): ?string
     {
