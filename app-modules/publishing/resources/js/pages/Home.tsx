@@ -1,7 +1,8 @@
 import AuthenticatedHomeLayout from "@/layouts/authenticated-home-layout";
-import { Head } from "@inertiajs/react";
+import { Head, router } from "@inertiajs/react";
 import { ChevronLeft, ChevronRight, Heart, Share2 } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CreateNoteModal } from "../components/create-note-modal";
 
 type FeedPost = {
   id: string;
@@ -29,6 +30,11 @@ type FeedPost = {
 
 type HomePageProps = {
   posts: FeedPost[];
+  workspace_id: string | null;
+  feed: {
+    has_more: boolean;
+    next_cursor: string | null;
+  };
 };
 
 type PostState = {
@@ -46,6 +52,12 @@ function getCsrfToken(): string {
   return token ?? "";
 }
 
+function getXsrfTokenFromCookie(): string {
+  const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]+)/);
+
+  return match ? decodeURIComponent(match[1]) : "";
+}
+
 async function likePost(postId: string): Promise<void> {
   await fetch("/community/likes", {
     method: "POST",
@@ -53,6 +65,7 @@ async function likePost(postId: string): Promise<void> {
       "Content-Type": "application/json",
       "X-Requested-With": "XMLHttpRequest",
       "X-CSRF-TOKEN": getCsrfToken(),
+      "X-XSRF-TOKEN": getXsrfTokenFromCookie(),
     },
     body: JSON.stringify({ post_id: postId }),
     credentials: "same-origin",
@@ -66,6 +79,7 @@ async function unlikePost(postId: string): Promise<void> {
       "Content-Type": "application/json",
       "X-Requested-With": "XMLHttpRequest",
       "X-CSRF-TOKEN": getCsrfToken(),
+      "X-XSRF-TOKEN": getXsrfTokenFromCookie(),
     },
     body: JSON.stringify({ post_id: postId }),
     credentials: "same-origin",
@@ -85,11 +99,16 @@ function initialsFromName(name: string | null): string {
     .join("");
 }
 
-export default function Home({ posts }: HomePageProps) {
+export default function Home({ posts, workspace_id, feed }: HomePageProps) {
   const touchStartByPostRef = useRef<Record<string, number | null>>({});
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const [feedPosts, setFeedPosts] = useState<FeedPost[]>(posts);
+  const [hasMorePosts, setHasMorePosts] = useState(feed.has_more);
+  const [nextCursor, setNextCursor] = useState<string | null>(feed.next_cursor);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const initialState = useMemo<Record<string, PostState>>(() => {
-    return posts.reduce<Record<string, PostState>>((acc, post) => {
+    return feedPosts.reduce<Record<string, PostState>>((acc, post) => {
       acc[post.id] = {
         likedByMe: post.metrics.liked_by_me,
         likesCount: post.metrics.likes_count,
@@ -98,9 +117,94 @@ export default function Home({ posts }: HomePageProps) {
 
       return acc;
     }, {});
-  }, [posts]);
+  }, [feedPosts]);
 
   const [postStateMap, setPostStateMap] = useState<Record<string, PostState>>(initialState);
+  const [isComposerOpen, setIsComposerOpen] = useState(false);
+
+  useEffect(() => {
+    setFeedPosts(posts);
+  }, [posts]);
+
+  useEffect(() => {
+    setHasMorePosts(feed.has_more);
+    setNextCursor(feed.next_cursor);
+  }, [feed]);
+
+  useEffect(() => {
+    setPostStateMap(initialState);
+  }, [initialState]);
+
+  const loadMorePosts = useCallback(async () => {
+    if (isLoadingMore || !hasMorePosts || !nextCursor) {
+      return;
+    }
+
+    setIsLoadingMore(true);
+
+    try {
+      const response = await fetch(`/publishing/feed?cursor=${encodeURIComponent(nextCursor)}`, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        credentials: "same-origin",
+      });
+
+      if (!response.ok) {
+        return;
+      }
+
+      const payload = (await response.json()) as {
+        data?: {
+          posts?: FeedPost[];
+          has_more?: boolean;
+          next_cursor?: string | null;
+        };
+      };
+
+      const newPosts = payload.data?.posts ?? [];
+
+      setFeedPosts((previous) => {
+        const knownIds = new Set(previous.map((post) => post.id));
+        const filtered = newPosts.filter((post) => !knownIds.has(post.id));
+
+        return [...previous, ...filtered];
+      });
+
+      setHasMorePosts(payload.data?.has_more ?? false);
+      setNextCursor(payload.data?.next_cursor ?? null);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [hasMorePosts, isLoadingMore, nextCursor]);
+
+  useEffect(() => {
+    const sentinel = loadMoreRef.current;
+    if (!sentinel) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          void loadMorePosts();
+        }
+      },
+      {
+        root: null,
+        rootMargin: "220px",
+        threshold: 0,
+      }
+    );
+
+    observer.observe(sentinel);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [loadMorePosts]);
 
   const handleToggleLike = async (postId: string) => {
     const currentState = postStateMap[postId];
@@ -213,11 +317,11 @@ export default function Home({ posts }: HomePageProps) {
   };
 
   return (
-    <AuthenticatedHomeLayout>
+    <AuthenticatedHomeLayout onCreateClick={() => setIsComposerOpen(true)}>
       <Head title="Home" />
 
       <section className="-mx-3 w-[calc(100%+1.5rem)] bg-[#F7F4ED] md:mx-auto md:w-full md:max-w-190">
-        {posts.length === 0 ? (
+        {feedPosts.length === 0 ? (
           <div className="mx-3 rounded-3xl border border-zinc-200 bg-white p-6 text-center shadow-[0_8px_20px_rgba(15,23,42,0.06)] md:mx-0">
             <p className="text-base font-semibold tracking-tight text-zinc-900">No hay posts publicados todavía</p>
             <p className="mt-2 text-sm text-zinc-500">
@@ -226,7 +330,7 @@ export default function Home({ posts }: HomePageProps) {
           </div>
         ) : null}
 
-        {posts.map((post) => {
+        {feedPosts.map((post) => {
           const postState = postStateMap[post.id] ?? {
             likedByMe: false,
             likesCount: 0,
@@ -266,7 +370,7 @@ export default function Home({ posts }: HomePageProps) {
                 {currentMedia ? (
                   <div className="mt-3">
                     <div
-                      className="relative -mx-3 w-[calc(100%+1.5rem)] overflow-hidden bg-zinc-100 md:mx-0 md:w-full md:rounded-2xl md:border md:border-zinc-200"
+                      className="relative -mx-3 aspect-[4/5] w-[calc(100%+1.5rem)] overflow-hidden bg-zinc-100 md:mx-0 md:w-full md:rounded-2xl md:border md:border-zinc-200"
                       onTouchStart={(event) => handleTouchStart(post.id, event.changedTouches[0]?.clientX ?? 0)}
                       onTouchEnd={(event) =>
                         handleTouchEnd(post.id, event.changedTouches[0]?.clientX ?? 0, post.media.length)
@@ -275,7 +379,7 @@ export default function Home({ posts }: HomePageProps) {
                       <img
                         src={currentMedia.url}
                         alt={`Imagen del post ${post.content.title}`}
-                        className="h-auto max-h-[72vh] w-full object-cover"
+                        className="h-full w-full object-cover"
                       />
 
                       {hasCarousel ? (
@@ -348,7 +452,23 @@ export default function Home({ posts }: HomePageProps) {
             </article>
           );
         })}
+
+        <div ref={loadMoreRef} className="h-8 w-full" aria-hidden="true" />
+
+        {isLoadingMore ? (
+          <div className="px-4 pb-6 text-center text-sm text-zinc-500 md:px-0">Cargando mas posts...</div>
+        ) : null}
       </section>
+
+      <CreateNoteModal
+        isOpen={isComposerOpen}
+        workspaceId={workspace_id}
+        onClose={() => setIsComposerOpen(false)}
+        onPublished={() => {
+          setIsComposerOpen(false);
+          router.reload({ only: ["posts", "workspace_id", "feed"] });
+        }}
+      />
     </AuthenticatedHomeLayout>
   );
 }

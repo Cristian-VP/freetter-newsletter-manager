@@ -11,14 +11,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 - Visual/UI references in `.context/images_references` to guide upcoming design iterations (#FRT-14)
 - Automatic synchronisation of the authentication modal after sending a magic link (#FRT-15)
 - `/auth/session-status` endpoint for session polling from the frontend and synchronisation after logging in via a magic link (#FRT-15)
+- Cursor-based feed pagination endpoint (`GET /publishing/feed`) and authenticated media streaming endpoint (`GET /publishing/media/{media}`) for infinite scrolling and local media visibility (#FRT-16)
 ### Changed
 - The `home` route was moved under Publishing module ownership, and the duplicate global route definition was removed (#FRT-14)
 - The Magic Link flow now redirects to Publishing Home (`route('home')`) after authentication (#FRT-14)
 - 7-day persistent session policy for inactivity (similar to Substack) (#FRT-15)
 - Updated modular Inertia page resolution to improve module page loading (#FRT-14)
+- Home feed media now uses a fixed `4:5` frame ratio for consistent visual layout across posts (#FRT-16)
 ### Fixed
 - Fixed the issue where a double tab appeared after logging in via a magic link (#FRT-15)
 - Fixed the confusion regarding the CTA and authentication modal mode (#FRT-15)
+- Fixed cursor pagination in Home Feed where subsequent requests could return duplicated first-page results due to cursor encoding/comparison mismatches (#FRT-16)
 
 ## [16/04/2026]
 ### Added

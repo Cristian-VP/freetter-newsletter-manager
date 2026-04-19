@@ -30,11 +30,14 @@ class StorePostRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'author_id' => ['required', 'uuid', 'exists:identity_users,id'],
+            'author_id' => ['nullable', 'uuid', 'exists:identity_users,id'],
             'title' => ['required', 'string', 'max:255'],
             'type' => ['required', 'in:newsletter,note'],
-            'content' => ['required', 'array'],
+            'content' => ['required'],
             'excerpt' => ['nullable', 'string'],
+            'publish_now' => ['nullable', 'boolean'],
+            'media' => ['nullable', 'array', 'max:8'],
+            'media.*' => ['file', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:5120'],
         ];
     }
 }

@@ -5,7 +5,7 @@ import { NavigationIslandContainer } from "@/components/navigation/navigation-is
 import { ProfileNavAvatar } from "@/components/navigation/profile-nav-avatar";
 import { type HomeNavItemKey } from "@/components/navigation/types";
 import { cn } from "@/lib/utils";
-import { House, PencilLine, UsersRound } from "lucide-react";
+import { House, PencilLine, Plus, UsersRound } from "lucide-react";
 
 interface DesktopSideNavProps {
   activeItem: HomeNavItemKey;
@@ -14,6 +14,7 @@ interface DesktopSideNavProps {
   onMouseEnter: React.MouseEventHandler<HTMLElement>;
   onMouseLeave: React.MouseEventHandler<HTMLElement>;
   onToggleMenu: () => void;
+  onCreatePostClick: () => void;
   onSelect: (item: HomeNavItemKey) => void;
   userName?: string;
   userAvatar?: string;
@@ -26,6 +27,7 @@ export function DesktopSideNav({
   onMouseEnter,
   onMouseLeave,
   onToggleMenu,
+  onCreatePostClick,
   onSelect,
   userName,
   userAvatar,
@@ -71,6 +73,14 @@ export function DesktopSideNav({
                 label="Crear"
                 isActive={activeItem === "create"}
                 onClick={() => onSelect("create")}
+                showLabel={isExpanded}
+              />
+
+              <NavItemIconButton
+                icon={Plus}
+                label="Nuevo post"
+                isActive={false}
+                onClick={onCreatePostClick}
                 showLabel={isExpanded}
               />
 

@@ -234,6 +234,25 @@ Este documento describe el estado real del repositorio hoy: avance funcional, br
 - qué riesgos nuevos aparecieron:
     - Ninguno relevante. El polling de sesión es seguro y no expone datos sensibles.
 
+## 0.7.2. Actualización Incremental Feed UX + Media Consistency (19-04-2026)
+
+- fecha: 19 de abril de 2026
+- qué cambió realmente en código:
+    - Se implementó paginación por cursor para Home Feed con endpoint `GET /publishing/feed` y carga incremental en frontend (infinite scroll real).
+    - Se agregó endpoint autenticado de media `GET /publishing/media/{media}` para servir archivos locales con validación de membresía de workspace.
+    - Se corrigió el cursor del feed para uso seguro en query string (URL-safe) y se normalizó `published_at` para comparaciones SQL estables.
+    - Se estandarizó el render visual de imágenes del feed con marco fijo `4:5` en `publishing::Home` para evitar variación de altura entre posts.
+- validación ejecutada:
+    - `vendor/bin/pint --dirty --format agent` -> pass
+    - `php artisan test --compact app-modules/publishing/tests/Feature/Http/HomeFeedControllerTest.php app-modules/publishing/tests/Feature/Http/PostControllerTest.php` -> 12 pasaron (106 assertions)
+    - `npm run build` -> pass
+- qué riesgos se cerraron:
+    - Se cerró la inconsistencia visual por altura variable de imágenes en feed.
+    - Se cerró la regresión de paginación donde la segunda página repetía resultados de la primera.
+    - Se cerró la brecha de acceso/visualización para media local en Home Feed.
+- qué riesgos nuevos aparecieron:
+    - No se detectan riesgos críticos nuevos en el scope validado.
+
 ## 1. Resumen Ejecutivo
 
 Freetter tiene dirección de producto y arquitectura bien definida en `.context`, pero la implementación está incompleta y heterogénea entre módulos.
