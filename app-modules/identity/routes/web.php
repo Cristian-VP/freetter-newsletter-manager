@@ -26,6 +26,10 @@ Route::get('/magic-links/{user}', [MagicLinkAuthController::class, 'authenticate
     ->middleware('signed')
     ->name('magic-links.authenticate');
 
+Route::get('/auth/session-status', [MagicLinkAuthController::class, 'sessionStatus'])
+    ->middleware('web')
+    ->name('auth.session-status');
+
 Route::prefix('identity')->name('identity.')->group(function (): void {
     Route::post('/workspaces', [WorkspaceController::class, 'store'])->name('workspaces.store');
     Route::post('/workspaces/{workspace}/invitations', [InvitationController::class, 'store'])

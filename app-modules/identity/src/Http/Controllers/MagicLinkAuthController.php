@@ -6,6 +6,7 @@ use Domains\Identity\Http\Requests\LoginMagicLinkRequest;
 use Domains\Identity\Http\Requests\RegisterMagicLinkRequest;
 use Domains\Identity\Models\User;
 use Domains\Identity\Notifications\MagicLinkNotification;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
@@ -16,6 +17,14 @@ use Illuminate\Support\Str;
 
 class MagicLinkAuthController extends Controller
 {
+    public function sessionStatus(Request $request): JsonResponse
+    {
+        return response()->json([
+            'authenticated' => Auth::guard('web')->check(),
+            'redirect_url' => route('home'),
+        ]);
+    }
+
     public function register(RegisterMagicLinkRequest $request): RedirectResponse
     {
         $email = Str::lower($request->string('email')->value());

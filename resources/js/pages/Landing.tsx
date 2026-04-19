@@ -1,11 +1,9 @@
 import { useState } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
-import { useIsMobile } from '../hooks/use-mobile';
 import { AuthModal } from '../components/auth-modal';
 import { BurgerMenuButton } from '@/components/navigation/burger-menu-button';
 
 export default function Landing() {
-    const isMobile = useIsMobile();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isAuthOpen, setIsAuthOpen] = useState(false);
     const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
@@ -133,12 +131,12 @@ export default function Landing() {
                         <button
                             onClick={(e) => {
                                 e.stopPropagation();
-                                setAuthMode(isMobile ? "signup" : "signin");
+                                setAuthMode('signin');
                                 setIsAuthOpen(true);
                             }}
                             className="inline-block rounded-lg bg-black px-8 py-3 text-lg satoshi-regular text-white transition hover:bg-zinc-800"
                         >
-                            {isMobile ? "Get started" : "Start reading"}
+                            Start reading
                         </button>
                     </div>
                 </main>
