@@ -77,7 +77,7 @@ class MagicLinkAuthController extends Controller
         Auth::guard('web')->login($identityUser, true);
         $request->session()->regenerate();
 
-        return redirect('/home');
+        return redirect()->route('home');
     }
 
     public function logout(Request $request): RedirectResponse

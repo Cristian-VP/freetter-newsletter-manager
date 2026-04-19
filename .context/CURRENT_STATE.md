@@ -2,7 +2,7 @@
 
 ## Fecha de corte
 
-16 de abril de 2026.
+19 de abril de 2026.
 
 Este documento describe el estado real del repositorio hoy: avance funcional, brechas tecnicas y prioridades inmediatas.
 
@@ -188,6 +188,34 @@ Este documento describe el estado real del repositorio hoy: avance funcional, br
     - `Dashboard` y `Settings` permanecen en estado base/propuesta (sin casos de negocio completos).
     - Persisten links placeholder en Landing (`/membership`, `/write`) sin rutas funcionales confirmadas.
 
+## 0.7. Actualización Incremental Publishing Home Feed + UI References (19-04-2026)
+
+- fecha: 19 de abril de 2026
+- rango de commits analizado en esta rama (`feature/FRT-14`):
+    - inicio de rama: `c6a463d` (`Added:  ui integration requirements`)
+    - último commit: `20614f8` (`Added: image references to UI desing`)
+- qué cambió realmente en código:
+    - Se implementó un caso de uso real de feed en `publishing` con `HomeFeedController` y página Inertia `publishing::Home` para `GET /home` autenticado.
+    - El feed ahora carga posts publicados de otros autores (excluye posts propios), ordena por fecha de publicación descendente, limita a 30 ítems, incluye métricas de likes y estado `liked_by_me`, y resuelve URLs de media/avatar.
+    - Se movió la ruta de `home` al módulo `publishing` (`app-modules/publishing/routes/web.php`) y se removió la definición duplicada en `routes/web.php` para evitar conflicto de ownership del endpoint.
+    - Se ajustó el flujo de autenticación para redirigir a `route('home')` (home de publishing) tras consumir magic link.
+    - Se añadió seeder de demo `HomeFeedDemoSeeder` y se registró en `database/seeders/DatabaseSeeder.php` para poblar escenarios del feed.
+    - Se corrigió la resolución modular de páginas Inertia en `resources/js/app.tsx` y se simplificó wiring de estado en `resources/js/layouts/authenticated-home-layout.tsx`.
+    - Se incorporó documentación y referencias visuales para diseño UI en `.context/`:
+        - `content-type_newsletter-builder.md`
+        - set de imágenes de referencia en `.context/images_references/` (Ghost, Instagram y Substack) para guiar decisiones de UX/UI.
+- validación ejecutada:
+    - Revisión de diffs de commits exclusivos de rama: `git log --oneline develop..HEAD` + `git diff --name-status develop...HEAD`.
+    - `php artisan test --compact app-modules/publishing/tests/Feature/Http/HomeFeedControllerTest.php` -> 5 pasaron (56 assertions).
+- qué riesgos se cerraron:
+    - Se cerró el gap de `home` sin ownership de módulo claro: el endpoint queda explícitamente dentro de `publishing`.
+    - Se cerró el riesgo de feed vacío por falta de backend/page dedicada para consumo de contenido publicado entre usuarios.
+    - Se reduce el riesgo de inconsistencia UI al documentar referencias visuales concretas para próximos incrementos de diseño.
+- qué riesgos nuevos aparecieron:
+    - El seeder `HomeFeedDemoSeeder` queda ejecutándose desde `DatabaseSeeder` por defecto; en entornos compartidos puede introducir datos de demo no deseados si no se condiciona por entorno.
+    - El feed consume likes vía `DB::table('community_likes')` dentro de `publishing`; funciona, pero conviene vigilar el acoplamiento entre módulos y evolucionar a integración por contrato/evento si el dominio crece.
+    - Siguen faltando pruebas E2E/UI del comportamiento interactivo del feed (carrusel táctil, like optimista y rollback en error).
+
 ## 1. Resumen Ejecutivo
 
 Freetter tiene dirección de producto y arquitectura bien definida en `.context`, pero la implementación está incompleta y heterogénea entre módulos.
@@ -196,7 +224,7 @@ Estado general:
 
 - `activity`: módulo más avanzado, aun con inconsistencias de hardening
 - `identity`: base funcional parcial con desajustes entre migraciones, modelos y factories
-- `publishing`: estructura inicial creada, con errores de integridad en esquema y relaciones
+- `publishing`: pasa de estructura inicial a implementación parcial con `HomeFeedController`, página `publishing::Home`, rutas activas y pruebas feature específicas
 - `audience`, `delivery`, `community`: MVP implementado con integración por eventos
 - UI root resources: base frontend Inertia React operativa con Landing, modal de autenticación, navegación responsive mobile/desktop y vistas autenticadas iniciales (`Home`, `Dashboard`, `Settings`)
 
@@ -207,7 +235,7 @@ Conteo de artefactos en código (no implica calidad ni completitud):
 | Módulo | Migraciones | Modelos | Providers | Archivos de rutas | Tests |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | `identity` | 4 | 4 | 1 | 1 | 1 |
-| `publishing` | 6 | 4 | 1 | 1 | 1 |
+| `publishing` | 6 | 4 | 1 | 1 | 2 |
 | `activity` | 3 | 3 | 1 | 1 | 2 |
 | `audience` | 0 | 0 | 1 | 1 | 1 |
 | `community` | 0 | 0 | 1 | 1 | 1 |
@@ -215,7 +243,7 @@ Conteo de artefactos en código (no implica calidad ni completitud):
 
 Otros indicadores:
 
-- controladores de módulo: `0`
+- controladores de módulo: `>= 1` (al menos `HomeFeedController` en `publishing`)
 - tests en `tests/` raiz: `2`
 
 ## 3. Hallazgos Críticos Actuales
@@ -232,12 +260,12 @@ Otros indicadores:
 
 - solo `ActivityServiceProvider` intenta cargar migraciones, con ruta incorrecta
 - providers de `identity`, `publishing`, `audience`, `community`, `delivery` están vacíos
-- todos los archivos de rutas de módulo están comentados
+- ya no todos los archivos de rutas de módulo están comentados: `publishing` expone `GET /home` y endpoints autenticados activos
 
 ### 3.3 Capa de aplicación y HTTP
 
-- no hay controladores en `app-modules/*/src/Http/Controllers`
-- predominan placeholders y clases sin casos de uso aplicados
+- ya existen controladores de módulo en producción de código (ej.: `HomeFeedController` en `publishing`)
+- aún predominan placeholders en varios módulos y falta ampliar casos de uso aplicados de forma homogénea
 
 ### 3.4 Calidad y pruebas
 

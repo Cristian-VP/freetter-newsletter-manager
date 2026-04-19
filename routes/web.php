@@ -19,10 +19,6 @@ Route::get('/', function () {
 
 // Solo para usuarios autenticados
 Route::middleware('auth')->group(function () {
-    Route::get('/home', function () {
-        return Inertia::render('Home');
-    })->name('home');
-
     Route::get('/settings', function () {
         return Inertia::render('Settings');
     })->name('settings');

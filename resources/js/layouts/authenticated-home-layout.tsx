@@ -45,12 +45,7 @@ export default function AuthenticatedHomeLayout({ children }: AuthenticatedHomeL
         </div>
       ) : null}
 
-      <main
-        className={cn(
-          "mx-auto min-h-screen w-full px-3 pb-28 pt-4 md:px-8 md:pb-8 md:pt-8",
-          isDesktopExpanded ? "md:pl-68" : "md:pl-27.5",
-        )}
-      >
+      <main className={cn("mx-auto min-h-screen w-full px-3 pb-28 pt-4 md:pl-68 md:pr-8 md:pb-8 md:pt-8")}>
         {children}
       </main>
 
