@@ -1,9 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { X } from 'lucide-react';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 interface AuthModalProps {
     isOpen: boolean;
@@ -14,7 +13,6 @@ interface AuthModalProps {
 export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModalProps) {
     const [mode, setMode] = useState<'signin' | 'signup'>(initialMode);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
-    const isMobile = useIsMobile();
 
     const { data, setData, post, processing, errors } = useForm({
         email: '',
@@ -33,6 +31,54 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
         };
     }, [isOpen]);
 
+    useEffect(() => {
+        if (isOpen) {
+            setMode(initialMode);
+        }
+    }, [initialMode, isOpen]);
+
+    useEffect(() => {
+        if (!isOpen || successMessage === null) {
+            return;
+        }
+
+        let pollingCancelled = false;
+
+        const checkSessionStatus = async (): Promise<void> => {
+            try {
+                const response = await fetch('/auth/session-status', {
+                    credentials: 'same-origin',
+                    headers: {
+                        Accept: 'application/json',
+                    },
+                });
+
+                if (!response.ok || pollingCancelled) {
+                    return;
+                }
+
+                const data: { authenticated?: boolean; redirect_url?: string } = await response.json();
+
+                if (data.authenticated === true) {
+                    window.location.href = data.redirect_url ?? '/home';
+                }
+            } catch {
+                // Intentionally ignore temporary network failures while polling.
+            }
+        };
+
+        const intervalId = window.setInterval(() => {
+            void checkSessionStatus();
+        }, 2500);
+
+        void checkSessionStatus();
+
+        return () => {
+            pollingCancelled = true;
+            window.clearInterval(intervalId);
+        };
+    }, [isOpen, successMessage]);
+
     if (!isOpen) return null;
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -43,7 +89,7 @@ export function AuthModal({ isOpen, onClose, initialMode = 'signin' }: AuthModal
             preserveScroll: true,
             onSuccess: () => {
                 setSuccessMessage('Te hemos enviado un enlace al correo. Revisa tu bandeja de entrada.');
-            }
+            },
         });
     };
 
