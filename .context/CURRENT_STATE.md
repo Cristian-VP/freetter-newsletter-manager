@@ -215,6 +215,24 @@ Este documento describe el estado real del repositorio hoy: avance funcional, br
     - El seeder `HomeFeedDemoSeeder` queda ejecutándose desde `DatabaseSeeder` por defecto; en entornos compartidos puede introducir datos de demo no deseados si no se condiciona por entorno.
     - El feed consume likes vía `DB::table('community_likes')` dentro de `publishing`; funciona, pero conviene vigilar el acoplamiento entre módulos y evolucionar a integración por contrato/evento si el dominio crece.
     - Siguen faltando pruebas E2E/UI del comportamiento interactivo del feed (carrusel táctil, like optimista y rollback en error).
+## 0.7.1 Sesión activa (19-04-2026)
+- qué cambió realmente en código:
+    - Política de sesión persistente de 7 días por inactividad aplicada globalmente vía provider.
+    - Nuevo endpoint `/auth/session-status` para polling de sesión desde frontend (sin recarga manual tras magic link).
+    - Corrección de los CTA en Landing: "Get started" abre registro, "Start reading" y "Sign in" abren login.
+    - Sincronización del modo del modal de autenticación y polling automático tras enviar magic link.
+    - Refactor mínimo en frontend para eliminar imports y estados no usados.
+    - Tests feature agregados para endpoint de sesión y validación de política de expiración.
+- validación ejecutada:
+    - `vendor/bin/pint --dirty --format agent` -> pass
+    - `php artisan test --compact app-modules/identity/tests/Feature/Http/MagicLinkAuthenticationTest.php` -> 12 pasaron (49 assertions)
+    - Revisión manual de regresiones y límites de módulo.
+- qué riesgos se cerraron:
+    - Se elimina el bug de doble pestaña tras login por magic link.
+    - Se garantiza persistencia de sesión tipo "Substack" por dispositivo.
+    - Se corrige la confusión de CTA y modo del modal.
+- qué riesgos nuevos aparecieron:
+    - Ninguno relevante. El polling de sesión es seguro y no expone datos sensibles.
 
 ## 1. Resumen Ejecutivo
 
