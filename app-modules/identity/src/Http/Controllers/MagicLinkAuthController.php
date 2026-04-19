@@ -2,6 +2,7 @@
 
 namespace Domains\Identity\Http\Controllers;
 
+use Domains\Identity\Actions\EnsureDefaultWorkspaceForUser;
 use Domains\Identity\Http\Requests\LoginMagicLinkRequest;
 use Domains\Identity\Http\Requests\RegisterMagicLinkRequest;
 use Domains\Identity\Models\User;
@@ -17,6 +18,8 @@ use Illuminate\Support\Str;
 
 class MagicLinkAuthController extends Controller
 {
+    public function __construct(private EnsureDefaultWorkspaceForUser $ensureDefaultWorkspaceForUser) {}
+
     public function sessionStatus(Request $request): JsonResponse
     {
         return response()->json([
@@ -82,6 +85,8 @@ class MagicLinkAuthController extends Controller
         if ($identityUser->email_verified_at === null) {
             $identityUser->forceFill(['email_verified_at' => now()])->save();
         }
+
+        $this->ensureDefaultWorkspaceForUser->execute($identityUser);
 
         Auth::guard('web')->login($identityUser, true);
         $request->session()->regenerate();

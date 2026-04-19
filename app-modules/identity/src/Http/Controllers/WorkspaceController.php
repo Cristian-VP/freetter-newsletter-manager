@@ -13,6 +13,9 @@ class WorkspaceController extends Controller
 {
     public function store(StoreWorkspaceRequest $request): JsonResponse
     {
+        $user = $request->user();
+        abort_unless($user, 401);
+
         $workspace = DB::transaction(function () use ($request): Workspace {
             $workspace = Workspace::query()->create([
                 'name' => $request->string('name')->value(),
@@ -22,7 +25,7 @@ class WorkspaceController extends Controller
             ]);
 
             Membership::query()->create([
-                'user_id' => $request->string('owner_user_id')->value(),
+                'user_id' => (string) $request->user()->id,
                 'workspace_id' => $workspace->id,
                 'role' => 'owner',
                 'joined_at' => now(),

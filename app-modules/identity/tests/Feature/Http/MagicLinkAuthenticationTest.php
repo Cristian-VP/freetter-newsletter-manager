@@ -2,7 +2,9 @@
 
 namespace Domains\Identity\Tests\Feature\Http;
 
+use Domains\Identity\Models\Membership;
 use Domains\Identity\Models\User;
+use Domains\Identity\Models\Workspace;
 use Domains\Identity\Notifications\MagicLinkNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -28,6 +30,11 @@ class MagicLinkAuthenticationTest extends TestCase
         $user = User::query()->where('email', 'new-user@example.com')->first();
 
         $this->assertNotNull($user);
+
+        $this->assertDatabaseHas('identity_memberships', [
+            'user_id' => $user->id,
+            'role' => 'admin',
+        ]);
 
         Notification::assertSentTo($user, MagicLinkNotification::class);
     }
@@ -92,6 +99,55 @@ class MagicLinkAuthenticationTest extends TestCase
         $response->assertRedirect('/home');
         $this->assertAuthenticatedAs($user);
         $this->assertNotNull($user->fresh()->email_verified_at);
+        $this->assertDatabaseHas('identity_memberships', [
+            'user_id' => $user->id,
+            'role' => 'admin',
+        ]);
+    }
+
+    public function test_signed_magic_link_does_not_create_extra_workspace_when_user_already_has_membership(): void
+    {
+        $workspace = Workspace::factory()->create();
+        $user = User::withoutEvents(static function (): User {
+            return User::factory()->unverified()->create();
+        });
+
+        Membership::factory()
+            ->forUser($user)
+            ->forWorkspace($workspace)
+            ->owner()
+            ->create();
+
+        $token = (string) Str::uuid();
+
+        DB::table('identity_magic_link_tokens')->insert([
+            'id' => (string) Str::uuid(),
+            'user_id' => $user->getKey(),
+            'token_hash' => hash('sha256', $token),
+            'expires_at' => now()->addMinutes(30),
+            'consumed_at' => null,
+            'created_at' => now(),
+        ]);
+
+        $magicLink = URL::temporarySignedRoute(
+            'magic-links.authenticate',
+            now()->addMinutes(30),
+            [
+                'user' => $user->getKey(),
+                'token' => $token,
+            ]
+        );
+
+        $response = $this->get($magicLink);
+
+        $response->assertRedirect('/home');
+        $this->assertDatabaseCount('identity_workspaces', 1);
+        $this->assertDatabaseCount('identity_memberships', 1);
+        $this->assertDatabaseHas('identity_memberships', [
+            'user_id' => $user->id,
+            'workspace_id' => $workspace->id,
+            'role' => 'owner',
+        ]);
     }
 
     public function test_magic_link_requires_valid_signature(): void
