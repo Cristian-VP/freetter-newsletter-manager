@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 
 ## [Unreleased]
 ### Added
+- Publishing Home Feed (`GET /home`) with recent posts from other authors, a 30-item limit, and like metrics (`likes_count`, `liked_by_me`) (#FRT-14)
+- Demo seeder to populate the initial feed (`HomeFeedDemoSeeder`) (#FRT-14)
+- Visual/UI references in `.context/images_references` to guide upcoming design iterations (#FRT-14)
+### Changed
+- The `home` route was moved under Publishing module ownership, and the duplicate global route definition was removed (#FRT-14)
+- The Magic Link flow now redirects to Publishing Home (`route('home')`) after authentication (#FRT-14)
+- Updated modular Inertia page resolution to improve module page loading (#FRT-14)
+
+## [16/04/2026]
+### Added
 - Endpoints for campaigns and bounce webhooks, with validation and idempotent handling (FRT-10)
 - Migrations, Eloquent modeles, HTTP Controllers and Form Requests for comments, likes, follows and moderation in Community Domain(FRT-11)
 - Delivery module with migrations, models, factories, events, listeners, jobs, and HTTP controllers (FRT-10)
