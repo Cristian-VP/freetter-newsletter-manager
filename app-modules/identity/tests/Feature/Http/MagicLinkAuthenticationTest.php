@@ -189,4 +189,37 @@ class MagicLinkAuthenticationTest extends TestCase
 
         $this->get('/home')->assertRedirect(route('login'));
     }
+
+    public function test_session_status_reports_guest_user(): void
+    {
+        $response = $this->getJson(route('auth.session-status'));
+
+        $response
+            ->assertOk()
+            ->assertJson([
+                'authenticated' => false,
+                'redirect_url' => route('home'),
+            ]);
+    }
+
+    public function test_session_status_reports_authenticated_user(): void
+    {
+        /** @var User $user */
+        $user = User::factory()->createOne();
+
+        $response = $this->actingAs($user)->getJson(route('auth.session-status'));
+
+        $response
+            ->assertOk()
+            ->assertJson([
+                'authenticated' => true,
+                'redirect_url' => route('home'),
+            ]);
+    }
+
+    public function test_session_lifetime_is_configured_to_seven_days(): void
+    {
+        $this->assertSame(10080, config('session.lifetime'));
+        $this->assertFalse((bool) config('session.expire_on_close'));
+    }
 }
