@@ -184,7 +184,7 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
       });
 
       if (!response.ok) {
-        setErrorMessage("No se pudo publicar la note. Revisa los campos e inténtalo de nuevo.");
+        setErrorMessage("No se pudo publicar el post. Revisa los campos e inténtalo de nuevo.");
         return;
       }
 
@@ -193,7 +193,7 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
       setActiveImageIndex(0);
       onPublished();
     } catch {
-      setErrorMessage("No se pudo conectar con el servidor para publicar la note.");
+      setErrorMessage("No se pudo conectar con el servidor para publicar el post.");
     } finally {
       setIsSubmitting(false);
     }
@@ -243,8 +243,6 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
             <X className="h-7 w-7" />
           </button>
 
-          <h2 className="text-xl font-semibold tracking-tight text-zinc-900">Nuevo post</h2>
-
           <button
             type="button"
             onClick={handleSubmit}
@@ -272,7 +270,7 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
               onChange={(event) => setBody(event.target.value)}
               placeholder="Escribe algo..."
               rows={4}
-              className="min-h-24 w-full resize-none bg-transparent text-2xl leading-tight tracking-tight text-zinc-900 outline-none placeholder:text-zinc-400 md:min-h-26 md:text-[44px]"
+              className="min-h-24 w-full resize-none bg-transparent text-2xl leading-tight tracking-tight text-zinc-900 outline-none placeholder:text-zinc-400 md:min-h-26 md:text-[18px]"
             />
           </div>
 
@@ -335,7 +333,7 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
         </div>
 
         <footer className="hidden items-center justify-between border-t border-zinc-200 px-6 py-4 md:flex">
-          <p className="text-xs text-zinc-500">Añade texto y hasta 8 imágenes para publicar.</p>
+          <p className="text-xs text-zinc-500"></p>
 
           <div className="flex items-center gap-2">
             <button

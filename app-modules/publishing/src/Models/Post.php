@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Schema;
 
 class Post extends Model
 {
@@ -64,7 +65,7 @@ class Post extends Model
 
     public function media(): BelongsToMany
     {
-        return $this->belongsToMany(Media::class, 'publishing_post_media', 'post_id', 'media_id');
+        return $this->belongsToMany(Media::class, $this->resolvePostMediaPivotTable(), 'post_id', 'media_id');
     }
 
     public function scopePublished(Builder $query): Builder
@@ -163,5 +164,18 @@ class Post extends Model
     {
         return $this->status === 'scheduled'
             && $this->published_at?->isPast();
+    }
+
+    private function resolvePostMediaPivotTable(): string
+    {
+        if (Schema::hasTable('publishing_post_media')) {
+            return 'publishing_post_media';
+        }
+
+        if (Schema::hasTable('publishing__post_media')) {
+            return 'publishing__post_media';
+        }
+
+        return 'publishing_post_media';
     }
 }

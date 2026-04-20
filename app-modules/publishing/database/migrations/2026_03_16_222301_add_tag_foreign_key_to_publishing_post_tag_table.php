@@ -16,6 +16,15 @@ return new class extends Migration
             return;
         }
 
+        $constraintExists = DB::scalar(
+            'select 1 from pg_constraint where conname = ? limit 1',
+            ['publishing_post_tag_tag_id_foreign']
+        );
+
+        if ($constraintExists) {
+            return;
+        }
+
         Schema::table('publishing_post_tag', function (Blueprint $table) {
             $table->foreign('tag_id', 'publishing_post_tag_tag_id_foreign')
                 ->references('id')
@@ -30,6 +39,15 @@ return new class extends Migration
     public function down(): void
     {
         if (DB::getDriverName() !== 'pgsql') {
+            return;
+        }
+
+        $constraintExists = DB::scalar(
+            'select 1 from pg_constraint where conname = ? limit 1',
+            ['publishing_post_tag_tag_id_foreign']
+        );
+
+        if (! $constraintExists) {
             return;
         }
 
