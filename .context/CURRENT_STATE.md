@@ -2,7 +2,7 @@
 
 ## Fecha de corte
 
-19 de abril de 2026.
+21 de abril de 2026.
 
 Este documento describe el estado real del repositorio hoy: avance funcional, brechas tecnicas y prioridades inmediatas.
 
@@ -252,6 +252,35 @@ Este documento describe el estado real del repositorio hoy: avance funcional, br
     - Se cerró la brecha de acceso/visualización para media local en Home Feed.
 - qué riesgos nuevos aparecieron:
     - No se detectan riesgos críticos nuevos en el scope validado.
+
+## 0.7.3. Actualización Incremental Publishing Composer UX + Feed Carousel + Linking (21-04-2026)
+
+- fecha: 21 de abril de 2026
+- qué cambió realmente en código:
+    - Se reemplazó el composer de notas en `publishing` por un editor rico basado en `contenteditable` con barra contextual por selección (negrita, cursiva, subrayado, listas, enlace y cita).
+    - Se añadió inserción de enlaces mediante componente propio (popover con input y acciones) en lugar de `window.prompt`.
+    - Se corrigió la aplicación de enlaces para que se inserten sobre la selección real del texto, sin perder el rango al cambiar foco.
+    - Se corrigió un efecto colateral donde el subrayado quedaba persistente tras crear link y afectaba texto nuevo; el comportamiento de subrayado quedó acotado al enlace.
+    - Se extendió la serialización de contenido para soportar bloque `quote` y render de bloques ricos en el feed (`paragraph`, `list`, `quote`).
+    - Se implementó colapso/expansión de texto largo en feed con CTA visual (icono + etiqueta `Ver mas`/`Ocultar`).
+    - Se ajustó el tratamiento de media para respetar ratio original y evitar recortes/deformaciones en feed (`object-contain`), con fondo crema consistente.
+    - Se rediseñó el carrusel del feed para patrón tipo Substack:
+        - mobile: arrastre horizontal con bloques y vista parcial del siguiente item,
+        - desktop: vista de 2 items y parte del siguiente cuando hay 3+, o patrón mobile cuando hay 2,
+        - flechas de navegación reintroducidas solo en desktop.
+    - Se eliminó el indicador de puntos tipo Instagram en el carrusel del feed.
+    - Se reforzó la jerarquía visual del feed: separador entre posts más grueso y estilo explícito de enlaces en contenido renderizado (subrayado + hover).
+- validación ejecutada:
+    - `npm run build` -> pass (múltiples ejecuciones durante la iteración, sin errores de compilación finales).
+    - Diagnóstico de frontend sobre archivos modificados (`Home.tsx` y `create-note-modal.tsx`) -> sin errores al cierre.
+- qué riesgos se cerraron:
+    - Se cerró la limitación funcional del composer para formateo y linking en notas.
+    - Se cerró la inconsistencia UX del carrusel entre mobile/desktop y la pérdida de affordance visual de navegación en desktop.
+    - Se cerró la regresión de subrayado persistente al crear enlaces en el editor.
+    - Se cerró la baja detectabilidad de links en el feed al estandarizar estilo de enlace clicable.
+- qué riesgos nuevos aparecieron:
+    - No se detectan riesgos críticos nuevos en el alcance validado.
+    - Riesgo residual no bloqueante: faltan pruebas E2E/UI automáticas para cubrir selección de texto + linking + carrusel en breakpoints.
 
 ## 1. Resumen Ejecutivo
 
