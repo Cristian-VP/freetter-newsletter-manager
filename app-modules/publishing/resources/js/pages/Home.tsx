@@ -1,7 +1,7 @@
 import AuthenticatedHomeLayout from "@/layouts/authenticated-home-layout";
 import { Head, router } from "@inertiajs/react";
-import { ChevronLeft, ChevronRight, Heart, Share2 } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ChevronDown, ChevronLeft, ChevronRight, ChevronUp, Heart, Share2 } from "lucide-react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CreateNoteModal } from "../components/create-note-modal";
 
 type FeedPost = {
@@ -14,8 +14,17 @@ type FeedPost = {
   published_at: string | null;
   published_relative: string | null;
   content: {
-    title: string;
-    excerpt: string;
+    blocks: Array<{
+      type?: string;
+      data?: {
+        html?: string;
+        text?: string;
+        quote?: string;
+        style?: string;
+        items?: string[];
+      };
+    }>;
+    plain_text: string;
   };
   media: Array<{
     id: string;
@@ -40,11 +49,128 @@ type HomePageProps = {
 type PostState = {
   likedByMe: boolean;
   likesCount: number;
-  currentMediaIndex: number;
 };
 
 const HEART_ACTIVE = "text-zinc-900";
 const HEART_IDLE = "text-zinc-500";
+
+function sanitizeRichHtml(html: string): string {
+  const parser = new DOMParser();
+  const documentNode = parser.parseFromString(`<div>${html}</div>`, "text/html");
+  const root = documentNode.body.firstElementChild as HTMLDivElement | null;
+
+  if (!root) {
+    return "";
+  }
+
+  const allowed = new Set(["A", "B", "BR", "EM", "I", "STRONG", "U"]);
+
+  Array.from(root.querySelectorAll("*")).forEach((element) => {
+    const tagName = element.tagName.toUpperCase();
+
+    if (!allowed.has(tagName)) {
+      const parent = element.parentNode;
+      if (!parent) {
+        return;
+      }
+
+      while (element.firstChild) {
+        parent.insertBefore(element.firstChild, element);
+      }
+      parent.removeChild(element);
+      return;
+    }
+
+    Array.from(element.attributes).forEach((attribute) => {
+      if (tagName === "A" && attribute.name === "href") {
+        return;
+      }
+
+      element.removeAttribute(attribute.name);
+    });
+
+    if (tagName === "A") {
+      const href = element.getAttribute("href") ?? "";
+      if (!/^(https?:|mailto:)/i.test(href)) {
+        const parent = element.parentNode;
+        if (!parent) {
+          return;
+        }
+
+        while (element.firstChild) {
+          parent.insertBefore(element.firstChild, element);
+        }
+        parent.removeChild(element);
+        return;
+      }
+
+      element.setAttribute("target", "_blank");
+      element.setAttribute("rel", "noopener noreferrer");
+    }
+  });
+
+  return root.innerHTML;
+}
+
+function renderPostBlocks(blocks: FeedPost["content"]["blocks"]): ReactNode {
+  if (blocks.length === 0) {
+    return null;
+  }
+
+  return blocks.map((block, index) => {
+    const blockType = block.type ?? "paragraph";
+
+    if (blockType === "list") {
+      const items = block.data?.items ?? [];
+      if (items.length === 0) {
+        return null;
+      }
+
+      const ListTag = block.data?.style === "ordered" ? "ol" : "ul";
+
+      return (
+        <ListTag
+          key={`list-${index}`}
+          className={block.data?.style === "ordered" ? "list-decimal pl-6" : "list-disc pl-6"}
+        >
+          {items.map((item, itemIndex) => (
+            <li
+              key={`item-${index}-${itemIndex}`}
+              className="mb-1 wrap-break-word"
+              dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(item) }}
+            />
+          ))}
+        </ListTag>
+      );
+    }
+
+    if (blockType === "quote") {
+      const html = block.data?.html?.trim() || block.data?.text?.trim() || "";
+      if (html === "") {
+        return null;
+      }
+
+      return (
+        <blockquote key={`quote-${index}`} className="border-l-3 border-zinc-400 pl-4 text-zinc-700 italic">
+          <span dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(html) }} />
+        </blockquote>
+      );
+    }
+
+    const html = block.data?.html?.trim() || block.data?.text?.trim() || "";
+    if (html === "") {
+      return null;
+    }
+
+    return (
+      <p
+        key={`paragraph-${index}`}
+        className="wrap-break-word"
+        dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(html) }}
+      />
+    );
+  });
+}
 
 function getCsrfToken(): string {
   const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute("content");
@@ -100,8 +226,8 @@ function initialsFromName(name: string | null): string {
 }
 
 export default function Home({ posts, workspace_id, feed }: HomePageProps) {
-  const touchStartByPostRef = useRef<Record<string, number | null>>({});
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const mediaRailByPostRef = useRef<Record<string, HTMLDivElement | null>>({});
   const [feedPosts, setFeedPosts] = useState<FeedPost[]>(posts);
   const [hasMorePosts, setHasMorePosts] = useState(feed.has_more);
   const [nextCursor, setNextCursor] = useState<string | null>(feed.next_cursor);
@@ -112,7 +238,6 @@ export default function Home({ posts, workspace_id, feed }: HomePageProps) {
       acc[post.id] = {
         likedByMe: post.metrics.liked_by_me,
         likesCount: post.metrics.likes_count,
-        currentMediaIndex: 0,
       };
 
       return acc;
@@ -120,6 +245,7 @@ export default function Home({ posts, workspace_id, feed }: HomePageProps) {
   }, [feedPosts]);
 
   const [postStateMap, setPostStateMap] = useState<Record<string, PostState>>(initialState);
+  const [expandedPostMap, setExpandedPostMap] = useState<Record<string, boolean>>({});
   const [isComposerOpen, setIsComposerOpen] = useState(false);
 
   useEffect(() => {
@@ -240,89 +366,33 @@ export default function Home({ posts, workspace_id, feed }: HomePageProps) {
     }
   };
 
-  const setCurrentMediaIndex = (postId: string, index: number) => {
-    setPostStateMap((prev) => ({
-      ...prev,
-      [postId]: {
-        ...prev[postId],
-        currentMediaIndex: index,
-      },
+  const toggleExpandedPost = (postId: string) => {
+    setExpandedPostMap((previous) => ({
+      ...previous,
+      [postId]: !previous[postId],
     }));
   };
 
-  const goToNextMedia = (postId: string, totalMedia: number) => {
-    if (totalMedia <= 1) {
+  const scrollMediaRail = (postId: string, direction: "next" | "prev") => {
+    const rail = mediaRailByPostRef.current[postId];
+    if (!rail) {
       return;
     }
 
-    setPostStateMap((prev) => {
-      const current = prev[postId];
-      if (!current) {
-        return prev;
-      }
-
-      return {
-        ...prev,
-        [postId]: {
-          ...current,
-          currentMediaIndex: (current.currentMediaIndex + 1) % totalMedia,
-        },
-      };
+    const offset = Math.round(rail.clientWidth * 0.74);
+    rail.scrollBy({
+      left: direction === "next" ? offset : -offset,
+      behavior: "smooth",
     });
-  };
-
-  const goToPreviousMedia = (postId: string, totalMedia: number) => {
-    if (totalMedia <= 1) {
-      return;
-    }
-
-    setPostStateMap((prev) => {
-      const current = prev[postId];
-      if (!current) {
-        return prev;
-      }
-
-      return {
-        ...prev,
-        [postId]: {
-          ...current,
-          currentMediaIndex: (current.currentMediaIndex - 1 + totalMedia) % totalMedia,
-        },
-      };
-    });
-  };
-
-  const handleTouchStart = (postId: string, clientX: number) => {
-    touchStartByPostRef.current[postId] = clientX;
-  };
-
-  const handleTouchEnd = (postId: string, clientX: number, totalMedia: number) => {
-    const startX = touchStartByPostRef.current[postId];
-    touchStartByPostRef.current[postId] = null;
-
-    if (startX === null || startX === undefined || totalMedia <= 1) {
-      return;
-    }
-
-    const deltaX = clientX - startX;
-    const swipeThreshold = 40;
-
-    if (deltaX <= -swipeThreshold) {
-      goToNextMedia(postId, totalMedia);
-    }
-
-    if (deltaX >= swipeThreshold) {
-      goToPreviousMedia(postId, totalMedia);
-    }
   };
 
   return (
     <AuthenticatedHomeLayout onCreateClick={() => setIsComposerOpen(true)}>
       <Head title="Home" />
 
-      <section className="-mx-3 w-[calc(100%+1.5rem)] bg-[#F7F4ED] md:mx-auto md:w-full md:max-w-190">
+      <section className="mx-auto w-full max-w-185 bg-[#F7F4ED]">
         {feedPosts.length === 0 ? (
-          <div className="mx-3 rounded-3xl border border-zinc-200 bg-white p-6 text-center shadow-[0_8px_20px_rgba(15,23,42,0.06)] md:mx-0">
+          <div className="rounded-3xl border border-zinc-200 bg-white p-6 text-center shadow-[0_8px_20px_rgba(15,23,42,0.06)]">
             <p className="text-base font-semibold tracking-tight text-zinc-900">No hay posts publicados todavía</p>
             <p className="mt-2 text-sm text-zinc-500">
               Cuando otros usuarios publiquen notas, aparecerán aquí en orden de publicación más reciente.
@@ -334,15 +404,15 @@ export default function Home({ posts, workspace_id, feed }: HomePageProps) {
           const postState = postStateMap[post.id] ?? {
             likedByMe: false,
             likesCount: 0,
-            currentMediaIndex: 0,
           };
 
           const hasCarousel = post.media.length > 1;
-          const currentMedia = post.media[postState.currentMediaIndex];
+          const shouldCollapseText = post.content.plain_text.length > 460 || post.content.blocks.length > 5;
+          const isExpanded = expandedPostMap[post.id] ?? false;
 
           return (
-            <article key={post.id} className="relative bg-[#F7F4ED] py-4">
-              <div className="mx-auto w-full max-w-170 px-3 md:px-4">
+            <article key={post.id} className="border-b-2 border-zinc-300/90 bg-[#F7F4ED] py-4 md:py-5">
+              <div className="mx-auto w-full max-w-170 px-1 sm:px-2 md:px-0">
                 <header className="flex items-center gap-3">
                   {post.author.avatar_url ? (
                     <img
@@ -362,63 +432,86 @@ export default function Home({ posts, workspace_id, feed }: HomePageProps) {
                   </div>
                 </header>
 
-                <div className="mt-3 space-y-2">
-                  <h2 className="text-base font-semibold tracking-tight text-zinc-900">{post.content.title}</h2>
-                  <p className="whitespace-pre-line text-[15px] leading-relaxed text-zinc-700">{post.content.excerpt}</p>
+                <div className="mt-3">
+                  <div
+                    className={`relative space-y-2 text-[16px] leading-relaxed text-zinc-800 [&_a]:font-medium [&_a]:text-zinc-800 [&_a]:underline [&_a]:underline-offset-3 [&_a]:decoration-zinc-700 [&_a:hover]:text-zinc-900 ${
+                      shouldCollapseText && !isExpanded ? "max-h-64 overflow-hidden" : ""
+                    }`}
+                  >
+                    {renderPostBlocks(post.content.blocks)}
+                    {shouldCollapseText && !isExpanded ? (
+                      <div className="pointer-events-none absolute inset-x-0 bottom-0 h-14 bg-linear-to-t from-[#F7F4ED] to-transparent" />
+                    ) : null}
+                  </div>
+
+                  {shouldCollapseText ? (
+                    <button
+                      type="button"
+                      onClick={() => toggleExpandedPost(post.id)}
+                      className="mt-2 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-700 transition hover:text-zinc-900"
+                    >
+                      <span>{isExpanded ? "Ocultar" : "Ver mas"}</span>
+                      {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                    </button>
+                  ) : null}
                 </div>
 
-                {currentMedia ? (
+                {post.media.length > 0 ? (
                   <div className="mt-3">
-                    <div
-                      className="relative -mx-3 aspect-[4/5] w-[calc(100%+1.5rem)] overflow-hidden bg-zinc-100 md:mx-0 md:w-full md:rounded-2xl md:border md:border-zinc-200"
-                      onTouchStart={(event) => handleTouchStart(post.id, event.changedTouches[0]?.clientX ?? 0)}
-                      onTouchEnd={(event) =>
-                        handleTouchEnd(post.id, event.changedTouches[0]?.clientX ?? 0, post.media.length)
-                      }
-                    >
-                      <img
-                        src={currentMedia.url}
-                        alt={`Imagen del post ${post.content.title}`}
-                        className="h-full w-full object-cover"
-                      />
-
-                      {hasCarousel ? (
-                        <>
-                          <button
-                            type="button"
-                            onClick={() => goToPreviousMedia(post.id, post.media.length)}
-                            className="absolute left-2 top-1/2 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.18)] ring-1 ring-black/10 transition hover:bg-white md:inline-flex"
-                            aria-label="Imagen anterior"
-                          >
-                            <ChevronLeft className="h-4 w-4" />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => goToNextMedia(post.id, post.media.length)}
-                            className="absolute right-2 top-1/2 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.18)] ring-1 ring-black/10 transition hover:bg-white md:inline-flex"
-                            aria-label="Imagen siguiente"
-                          >
-                            <ChevronRight className="h-4 w-4" />
-                          </button>
-                        </>
-                      ) : null}
-                    </div>
-
                     {hasCarousel ? (
-                      <div className="mt-2 flex items-center justify-center gap-1.5">
-                        {post.media.map((mediaItem, index) => (
-                          <button
-                            key={mediaItem.id}
-                            type="button"
-                            onClick={() => setCurrentMediaIndex(post.id, index)}
-                            className={`h-2 w-2 rounded-full transition ${
-                              index === postState.currentMediaIndex ? "bg-zinc-900" : "bg-zinc-300"
-                            }`}
-                            aria-label={`Ir a imagen ${index + 1}`}
-                          />
-                        ))}
+                      <div className="relative -mx-1 px-1 pb-1">
+                        <div
+                          ref={(node) => {
+                            mediaRailByPostRef.current[post.id] = node;
+                          }}
+                          className="overflow-x-auto"
+                        >
+                          <div className="flex snap-x snap-mandatory gap-2.5">
+                            {post.media.map((mediaItem, index) => {
+                              const desktopWidthClass = post.media.length >= 3 ? "md:w-[42%]" : "md:w-[68%]";
+
+                              return (
+                                <div
+                                  key={mediaItem.id}
+                                  className={`w-[82%] shrink-0 snap-start overflow-hidden rounded-2xl border border-zinc-200 bg-[#F7F4ED] sm:w-[68%] ${desktopWidthClass}`}
+                                >
+                                  <img
+                                    src={mediaItem.url}
+                                    alt={`Imagen ${index + 1} del post ${post.content.plain_text.slice(0, 36) || "sin texto"}`}
+                                    className="block h-auto w-full max-h-[72vh] object-contain md:max-h-140"
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => scrollMediaRail(post.id, "prev")}
+                          className="absolute left-1 top-1/2 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/92 text-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.18)] ring-1 ring-black/10 transition hover:bg-white md:inline-flex"
+                          aria-label="Imagen anterior"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => scrollMediaRail(post.id, "next")}
+                          className="absolute right-1 top-1/2 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/92 text-zinc-800 shadow-[0_2px_8px_rgba(0,0,0,0.18)] ring-1 ring-black/10 transition hover:bg-white md:inline-flex"
+                          aria-label="Imagen siguiente"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
                       </div>
-                    ) : null}
+                    ) : (
+                      <div className="overflow-hidden rounded-2xl border border-zinc-200 bg-[#F7F4ED]">
+                        <img
+                          src={post.media[0]?.url}
+                          alt={`Imagen del post ${post.content.plain_text.slice(0, 36) || "sin texto"}`}
+                          className="block h-auto w-full max-h-[72vh] object-contain md:max-h-168"
+                        />
+                      </div>
+                    )}
                   </div>
                 ) : null}
 
@@ -439,7 +532,11 @@ export default function Home({ posts, workspace_id, feed }: HomePageProps) {
 
                   <button
                     type="button"
-                    onClick={() => window.navigator.share?.({ title: post.content.title })}
+                    onClick={() =>
+                      window.navigator.share?.({
+                        title: post.content.plain_text.slice(0, 80) || "Post",
+                      })
+                    }
                     className="inline-flex items-center text-zinc-500 transition hover:text-zinc-900"
                     aria-label="Compartir"
                   >
@@ -447,8 +544,6 @@ export default function Home({ posts, workspace_id, feed }: HomePageProps) {
                   </button>
                 </footer>
               </div>
-
-              <div className="absolute bottom-0 left-1/2 h-0.5 w-screen -translate-x-1/2 bg-zinc-300 md:w-full" />
             </article>
           );
         })}

@@ -141,11 +141,45 @@ class Post extends Model
 
     private function extractTextFromContent(): string
     {
-        $text = collect($this->content['blocks'] ?? [])
-            ->pluck('data.text')
+        $blocks = $this->content['blocks'] ?? [];
+
+        if (! is_array($blocks)) {
+            return '';
+        }
+
+        $text = collect($blocks)
+            ->map(function ($block): string {
+                if (! is_array($block)) {
+                    return '';
+                }
+
+                $data = $block['data'] ?? [];
+                if (! is_array($data)) {
+                    return '';
+                }
+
+                if (($block['type'] ?? '') === 'list') {
+                    $items = $data['items'] ?? [];
+                    if (! is_array($items)) {
+                        return '';
+                    }
+
+                    return collect($items)
+                        ->map(fn ($item): string => is_string($item) ? strip_tags($item) : '')
+                        ->filter()
+                        ->join(' ');
+                }
+
+                $candidate = $data['text'] ?? $data['html'] ?? '';
+
+                return is_string($candidate) ? strip_tags($candidate) : '';
+            })
+            ->filter()
             ->join(' ');
 
-        return strip_tags($text);
+        $normalized = preg_replace('/\s+/', ' ', html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+
+        return trim($normalized ?? '');
     }
 
     public function url(): string

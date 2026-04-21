@@ -1,6 +1,18 @@
 import { type PageProps } from "@/types";
 import { usePage } from "@inertiajs/react";
-import { Camera, ImagePlus, Loader2, X } from "lucide-react";
+import {
+  Bold,
+  Camera,
+  ImagePlus,
+  Italic,
+  Link2,
+  List,
+  ListOrdered,
+  Loader2,
+  Quote,
+  Underline,
+  X,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 
 interface CreateNoteModalProps {
@@ -10,7 +22,14 @@ interface CreateNoteModalProps {
   onPublished: () => void;
 }
 
+type SelectionToolbarState = {
+  isVisible: boolean;
+  left: number;
+  top: number;
+};
+
 const MAX_IMAGES = 8;
+const INLINE_ALLOWED_TAGS = new Set(["A", "B", "BR", "EM", "I", "STRONG", "U"]);
 
 function initialsFromName(name: string | null | undefined): string {
   if (!name) {
@@ -25,35 +44,219 @@ function initialsFromName(name: string | null | undefined): string {
     .join("");
 }
 
-function sanitizeBody(body: string): string {
-  return body
-    .replace(/\r\n/g, "\n")
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .join("\n");
-}
-
 function getXsrfTokenFromCookie(): string {
   const match = document.cookie.match(/(?:^|; )XSRF-TOKEN=([^;]+)/);
 
   return match ? decodeURIComponent(match[1]) : "";
 }
 
+function normalizeLink(url: string): string {
+  const trimmedUrl = url.trim();
+  if (trimmedUrl === "") {
+    return "";
+  }
+
+  if (/^(https?:|mailto:)/i.test(trimmedUrl)) {
+    return trimmedUrl;
+  }
+
+  return `https://${trimmedUrl}`;
+}
+
+function sanitizeInlineHtml(html: string): string {
+  const parser = new DOMParser();
+  const documentNode = parser.parseFromString(`<div>${html}</div>`, "text/html");
+  const root = documentNode.body.firstElementChild as HTMLDivElement | null;
+
+  if (!root) {
+    return "";
+  }
+
+  const elements = Array.from(root.querySelectorAll("*"));
+  elements.forEach((element) => {
+    const tagName = element.tagName.toUpperCase();
+
+    if (!INLINE_ALLOWED_TAGS.has(tagName)) {
+      const parent = element.parentNode;
+      if (!parent) {
+        return;
+      }
+
+      while (element.firstChild) {
+        parent.insertBefore(element.firstChild, element);
+      }
+      parent.removeChild(element);
+      return;
+    }
+
+    Array.from(element.attributes).forEach((attribute) => {
+      if (tagName === "A" && attribute.name === "href") {
+        return;
+      }
+
+      element.removeAttribute(attribute.name);
+    });
+
+    if (tagName === "A") {
+      const normalizedHref = normalizeLink(element.getAttribute("href") ?? "");
+      if (normalizedHref === "") {
+        const parent = element.parentNode;
+        if (!parent) {
+          return;
+        }
+
+        while (element.firstChild) {
+          parent.insertBefore(element.firstChild, element);
+        }
+        parent.removeChild(element);
+        return;
+      }
+
+      element.setAttribute("href", normalizedHref);
+      element.setAttribute("target", "_blank");
+      element.setAttribute("rel", "noopener noreferrer");
+    }
+  });
+
+  return root.innerHTML.trim();
+}
+
+function extractPlainTextFromHtml(html: string): string {
+  const parser = new DOMParser();
+  const documentNode = parser.parseFromString(`<div>${html}</div>`, "text/html");
+  const root = documentNode.body.firstElementChild as HTMLDivElement | null;
+
+  if (!root) {
+    return "";
+  }
+
+  const text = root.textContent ?? "";
+
+  return text.replace(/\s+/g, " ").trim();
+}
+
+function buildPostBlocksFromHtml(html: string): Array<Record<string, unknown>> {
+  const parser = new DOMParser();
+  const documentNode = parser.parseFromString(`<div>${html}</div>`, "text/html");
+  const root = documentNode.body.firstElementChild as HTMLDivElement | null;
+
+  if (!root) {
+    return [];
+  }
+
+  const blocks: Array<Record<string, unknown>> = [];
+
+  Array.from(root.childNodes).forEach((node) => {
+    if (node.nodeType === Node.TEXT_NODE) {
+      const value = (node.textContent ?? "").trim();
+      if (value.length === 0) {
+        return;
+      }
+
+      blocks.push({
+        type: "paragraph",
+        data: {
+          text: value,
+          html: sanitizeInlineHtml(value),
+        },
+      });
+      return;
+    }
+
+    if (!(node instanceof HTMLElement)) {
+      return;
+    }
+
+    const tagName = node.tagName.toUpperCase();
+
+    if (tagName === "UL" || tagName === "OL") {
+      const items = Array.from(node.querySelectorAll(":scope > li"))
+        .map((item) => sanitizeInlineHtml(item.innerHTML))
+        .filter((item) => item.length > 0);
+
+      if (items.length > 0) {
+        blocks.push({
+          type: "list",
+          data: {
+            style: tagName === "OL" ? "ordered" : "unordered",
+            items,
+          },
+        });
+      }
+
+      return;
+    }
+
+    if (tagName === "BLOCKQUOTE") {
+      const htmlValue = sanitizeInlineHtml(node.innerHTML);
+      const textValue = extractPlainTextFromHtml(node.innerHTML);
+
+      if (htmlValue.length === 0 && textValue.length === 0) {
+        return;
+      }
+
+      blocks.push({
+        type: "quote",
+        data: {
+          text: textValue,
+          html: htmlValue,
+        },
+      });
+
+      return;
+    }
+
+    const htmlValue = sanitizeInlineHtml(node.innerHTML);
+    const textValue = extractPlainTextFromHtml(node.innerHTML);
+
+    if (htmlValue.length === 0 && textValue.length === 0) {
+      return;
+    }
+
+    blocks.push({
+      type: "paragraph",
+      data: {
+        text: textValue,
+        html: htmlValue,
+      },
+    });
+  });
+
+  return blocks;
+}
+
 export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: CreateNoteModalProps) {
   const { auth } = usePage<PageProps>().props;
+  const editorRef = useRef<HTMLDivElement | null>(null);
+  const selectionToolbarRef = useRef<HTMLDivElement | null>(null);
+  const linkComposerRef = useRef<HTMLDivElement | null>(null);
+  const linkInputRef = useRef<HTMLInputElement | null>(null);
+  const savedSelectionRangeRef = useRef<Range | null>(null);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
   const cameraInputRef = useRef<HTMLInputElement | null>(null);
   const carouselRef = useRef<HTMLDivElement | null>(null);
-  const [body, setBody] = useState("");
+  const [editorHtml, setEditorHtml] = useState("");
   const [images, setImages] = useState<File[]>([]);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [selectionToolbar, setSelectionToolbar] = useState<SelectionToolbarState>({
+    isVisible: false,
+    left: 0,
+    top: 0,
+  });
+  const [isLinkComposerOpen, setIsLinkComposerOpen] = useState(false);
+  const [linkValue, setLinkValue] = useState("");
+
+  const editorPlainText = useMemo(() => {
+    return extractPlainTextFromHtml(editorHtml);
+  }, [editorHtml]);
+
+  const isEditorEmpty = editorPlainText.length === 0;
 
   const canPublish = useMemo(() => {
-    return sanitizeBody(body).length > 0 && !isSubmitting;
-  }, [body, isSubmitting]);
+    return editorPlainText.length > 0 && !isSubmitting;
+  }, [editorPlainText, isSubmitting]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -83,6 +286,171 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
       });
     };
   }, [imagePreviews]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+
+    const handleSelectionChange = () => {
+      const editorElement = editorRef.current;
+      if (!editorElement) {
+        return;
+      }
+
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+        setSelectionToolbar((previous) => ({ ...previous, isVisible: false }));
+        return;
+      }
+
+      const range = selection.getRangeAt(0);
+      if (!editorElement.contains(range.commonAncestorContainer)) {
+        setSelectionToolbar((previous) => ({ ...previous, isVisible: false }));
+        return;
+      }
+
+      savedSelectionRangeRef.current = range.cloneRange();
+
+      const rect = range.getBoundingClientRect();
+      const toolbarWidth = 278;
+      const left = Math.min(window.innerWidth - toolbarWidth - 12, Math.max(12, rect.left + rect.width / 2 - toolbarWidth / 2));
+      const top = Math.max(12, rect.top - 58);
+
+      setSelectionToolbar({
+        isVisible: true,
+        left,
+        top,
+      });
+    };
+
+    const handlePointerDown = (event: MouseEvent) => {
+      const editorElement = editorRef.current;
+      const toolbarElement = selectionToolbarRef.current;
+      const linkComposerElement = linkComposerRef.current;
+      const target = event.target as Node | null;
+
+      if (!target) {
+        return;
+      }
+
+      if (editorElement?.contains(target) || toolbarElement?.contains(target) || linkComposerElement?.contains(target)) {
+        return;
+      }
+
+      setSelectionToolbar((previous) => ({ ...previous, isVisible: false }));
+      setIsLinkComposerOpen(false);
+    };
+
+    document.addEventListener("selectionchange", handleSelectionChange);
+    document.addEventListener("mousedown", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("selectionchange", handleSelectionChange);
+      document.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, [isOpen]);
+
+  const syncEditorHtml = () => {
+    const editorElement = editorRef.current;
+    if (!editorElement) {
+      setEditorHtml("");
+      return;
+    }
+
+    const currentHtml = editorElement.innerHTML.trim();
+
+    if (currentHtml === "<br>" || currentHtml === "<div><br></div>" || currentHtml === "&nbsp;") {
+      editorElement.innerHTML = "";
+      setEditorHtml("");
+      return;
+    }
+
+    setEditorHtml(editorElement.innerHTML);
+  };
+
+  const applyEditorCommand = (command: string, value?: string) => {
+    if (!editorRef.current) {
+      return;
+    }
+
+    editorRef.current.focus();
+    document.execCommand(command, false, value);
+    syncEditorHtml();
+    setSelectionToolbar((previous) => ({ ...previous, isVisible: false }));
+  };
+
+  const openLinkComposer = () => {
+    const editorElement = editorRef.current;
+    if (!editorElement) {
+      return;
+    }
+
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+    if (!editorElement.contains(range.commonAncestorContainer)) {
+      return;
+    }
+
+    savedSelectionRangeRef.current = range.cloneRange();
+    setLinkValue("");
+    setIsLinkComposerOpen(true);
+  };
+
+  const restoreSelection = (): boolean => {
+    const range = savedSelectionRangeRef.current;
+    if (!range) {
+      return false;
+    }
+
+    const selection = window.getSelection();
+    if (!selection) {
+      return false;
+    }
+
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    return true;
+  };
+
+  const closeLinkComposer = () => {
+    setIsLinkComposerOpen(false);
+    setLinkValue("");
+    savedSelectionRangeRef.current = null;
+  };
+
+  const handleCreateLink = () => {
+    const normalizedUrl = normalizeLink(linkValue);
+    if (normalizedUrl === "") {
+      closeLinkComposer();
+      return;
+    }
+
+    if (!restoreSelection()) {
+      closeLinkComposer();
+      return;
+    }
+
+    const editorElement = editorRef.current;
+    if (!editorElement) {
+      closeLinkComposer();
+      return;
+    }
+
+    document.execCommand("createLink", false, normalizedUrl);
+    syncEditorHtml();
+    setSelectionToolbar((previous) => ({ ...previous, isVisible: false }));
+    closeLinkComposer();
+  };
+
+  const handleInsertQuote = () => {
+    applyEditorCommand("formatBlock", "blockquote");
+  };
 
   const handleAddFiles = (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) {
@@ -122,15 +490,29 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
     });
   };
 
+  const resetComposer = () => {
+    if (editorRef.current) {
+      editorRef.current.innerHTML = "";
+    }
+
+    setEditorHtml("");
+    setImages([]);
+    setActiveImageIndex(0);
+    setErrorMessage(null);
+    setSelectionToolbar({
+      isVisible: false,
+      left: 0,
+      top: 0,
+    });
+    closeLinkComposer();
+  };
+
   const handleClose = () => {
     if (isSubmitting) {
       return;
     }
 
-    setBody("");
-    setImages([]);
-    setActiveImageIndex(0);
-    setErrorMessage(null);
+    resetComposer();
     onClose();
   };
 
@@ -144,24 +526,29 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
       return;
     }
 
-    const cleanedBody = sanitizeBody(body);
-    const excerpt = cleanedBody.slice(0, 220);
-    const firstLine = cleanedBody.split("\n")[0] ?? "";
-    const title = firstLine.slice(0, 90) || "Nuevo post";
+    const rawHtml = editorRef.current?.innerHTML ?? "";
+    const blocks = buildPostBlocksFromHtml(rawHtml);
+    const plainText = editorPlainText;
+
+    if (plainText.length === 0 || blocks.length === 0) {
+      setErrorMessage("Escribe contenido antes de publicar.");
+      return;
+    }
+
+    const excerpt = plainText.slice(0, 220);
+    const title = plainText.slice(0, 90) || "Nuevo post";
 
     const formData = new FormData();
     formData.append("title", title);
     formData.append("type", "note");
     formData.append("excerpt", excerpt);
     formData.append("publish_now", "1");
-    formData.append("content", JSON.stringify({
-      blocks: cleanedBody.split("\n").map((line) => ({
-        type: "paragraph",
-        data: {
-          text: line,
-        },
-      })),
-    }));
+    formData.append(
+      "content",
+      JSON.stringify({
+        blocks,
+      })
+    );
 
     images.forEach((image) => {
       formData.append("media[]", image);
@@ -188,9 +575,7 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
         return;
       }
 
-      setBody("");
-      setImages([]);
-      setActiveImageIndex(0);
+      resetComposer();
       onPublished();
     } catch {
       setErrorMessage("No se pudo conectar con el servidor para publicar el post.");
@@ -198,6 +583,20 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
       setIsSubmitting(false);
     }
   };
+
+  useEffect(() => {
+    if (!isLinkComposerOpen) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      linkInputRef.current?.focus();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [isLinkComposerOpen]);
 
   if (!isOpen) {
     return null;
@@ -232,7 +631,7 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
 
   return (
     <div className="fixed inset-0 z-50 bg-black/45 p-0 md:flex md:items-center md:justify-center md:p-4">
-      <section className="flex h-full w-full flex-col bg-[#F7F4ED] md:h-auto md:max-h-[92vh] md:max-w-2xl md:rounded-3xl md:bg-white md:shadow-[0_30px_90px_rgba(15,23,42,0.25)]">
+      <section className="flex h-full w-full max-w-full flex-col overflow-hidden bg-[#F7F4ED] md:h-auto md:max-h-[92vh] md:max-w-185 md:rounded-3xl md:bg-white md:shadow-[0_30px_90px_rgba(15,23,42,0.25)]">
         <header className="flex items-center justify-between px-4 pt-4 md:border-b md:border-zinc-200 md:px-6 md:py-4">
           <button
             type="button"
@@ -265,13 +664,154 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
               </div>
             )}
 
-            <textarea
-              value={body}
-              onChange={(event) => setBody(event.target.value)}
-              placeholder="Escribe algo..."
-              rows={4}
-              className="min-h-24 w-full resize-none bg-transparent text-2xl leading-tight tracking-tight text-zinc-900 outline-none placeholder:text-zinc-400 md:min-h-26 md:text-[18px]"
-            />
+            <div className="w-full min-w-0">
+              <div className="relative">
+                {isEditorEmpty ? (
+                  <p className="pointer-events-none absolute left-0 top-0 text-[30px] leading-tight tracking-tight text-zinc-400 md:text-[20px]">
+                    Escribe algo...
+                  </p>
+                ) : null}
+
+                <div
+                  ref={editorRef}
+                  contentEditable
+                  suppressContentEditableWarning
+                  role="textbox"
+                  aria-label="Editor de contenido"
+                  onInput={syncEditorHtml}
+                  onPaste={(event) => {
+                    event.preventDefault();
+                    const pastedText = event.clipboardData.getData("text/plain");
+                    document.execCommand("insertText", false, pastedText);
+                    syncEditorHtml();
+                  }}
+                  className="max-h-[42vh] min-h-24 w-full max-w-full overflow-y-auto wrap-anywhere bg-transparent text-[30px] leading-tight tracking-tight text-zinc-900 outline-none md:min-h-26 md:text-[20px]"
+                />
+
+                {selectionToolbar.isVisible ? (
+                  <div
+                    ref={selectionToolbarRef}
+                    className="fixed z-60 flex items-center gap-0.5 rounded-xl bg-zinc-900/96 p-1 text-white shadow-[0_10px_25px_rgba(0,0,0,0.28)]"
+                    style={{
+                      left: `${selectionToolbar.left}px`,
+                      top: `${selectionToolbar.top}px`,
+                    }}
+                  >
+                    <button
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => applyEditorCommand("bold")}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/90 transition hover:bg-white/12"
+                      aria-label="Negrita"
+                    >
+                      <Bold className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => applyEditorCommand("italic")}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/90 transition hover:bg-white/12"
+                      aria-label="Cursiva"
+                    >
+                      <Italic className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => applyEditorCommand("underline")}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/90 transition hover:bg-white/12"
+                      aria-label="Subrayado"
+                    >
+                      <Underline className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={openLinkComposer}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/90 transition hover:bg-white/12"
+                      aria-label="Insertar enlace"
+                    >
+                      <Link2 className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => applyEditorCommand("insertUnorderedList")}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/90 transition hover:bg-white/12"
+                      aria-label="Lista con viñetas"
+                    >
+                      <List className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => applyEditorCommand("insertOrderedList")}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/90 transition hover:bg-white/12"
+                      aria-label="Lista numerada"
+                    >
+                      <ListOrdered className="h-4 w-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={handleInsertQuote}
+                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/90 transition hover:bg-white/12"
+                      aria-label="Insertar cita"
+                    >
+                      <Quote className="h-4 w-4" />
+                    </button>
+                  </div>
+                ) : null}
+
+                {isLinkComposerOpen ? (
+                  <div
+                    ref={linkComposerRef}
+                    className="fixed z-70 w-76 max-w-[calc(100vw-24px)] rounded-xl border border-zinc-700 bg-zinc-900/98 p-2.5 text-white shadow-[0_14px_30px_rgba(0,0,0,0.35)]"
+                    style={{
+                      left: `${selectionToolbar.left}px`,
+                      top: `${selectionToolbar.top + 46}px`,
+                    }}
+                  >
+                    <p className="mb-2 text-xs font-medium text-zinc-300">Añadir enlace</p>
+                    <input
+                      ref={linkInputRef}
+                      type="url"
+                      value={linkValue}
+                      onChange={(event) => setLinkValue(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === "Enter") {
+                          event.preventDefault();
+                          handleCreateLink();
+                        }
+
+                        if (event.key === "Escape") {
+                          event.preventDefault();
+                          closeLinkComposer();
+                        }
+                      }}
+                      placeholder="https://ejemplo.com"
+                      className="h-9 w-full rounded-lg border border-zinc-600 bg-zinc-800 px-3 text-sm text-white outline-none ring-zinc-400 placeholder:text-zinc-400 focus:ring-2"
+                    />
+                    <div className="mt-2 flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={closeLinkComposer}
+                        className="inline-flex h-8 items-center rounded-lg px-2.5 text-xs font-medium text-zinc-300 transition hover:bg-white/8"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleCreateLink}
+                        className="inline-flex h-8 items-center rounded-lg bg-white px-2.5 text-xs font-semibold text-zinc-900 transition hover:bg-zinc-100"
+                      >
+                        Aplicar
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            </div>
           </div>
 
           {images.length > 0 ? (
@@ -305,7 +845,7 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
             </div>
           ) : null}
 
-          <div className="mt-4 flex items-center gap-2 text-zinc-700">
+          <div className="mt-4 flex flex-wrap items-center gap-2 text-zinc-700">
             <button
               type="button"
               onClick={() => galleryInputRef.current?.click()}

@@ -113,6 +113,11 @@ class HomeFeedController extends Controller
         $feedPosts = $postsForPage->map(function (Post $post) use ($likeCounts, $likedPostIds): array {
             $contentText = $post->getExcerpt(500);
             $publishedAt = $post->published_at;
+            $contentBlocks = $post->content['blocks'] ?? [];
+
+            if (! is_array($contentBlocks)) {
+                $contentBlocks = [];
+            }
 
             return [
                 'id' => $post->id,
@@ -128,8 +133,8 @@ class HomeFeedController extends Controller
                     'parts' => 1,
                 ]),
                 'content' => [
-                    'title' => $post->title,
-                    'excerpt' => $contentText,
+                    'blocks' => $contentBlocks,
+                    'plain_text' => $contentText,
                 ],
                 'media' => $post->media->map(function ($media): array {
                     return [
