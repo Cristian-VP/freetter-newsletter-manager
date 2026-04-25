@@ -2,18 +2,18 @@
 
 namespace Domains\Identity\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Domains\Identity\Database\Factories\MembershipFactory;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Domains\Identity\Models\User;
-use Domains\Identity\Models\Workspace;
-use Domains\Identity\Database\Factories\MembershipFactory;
+use Illuminate\Database\Eloquent\Model;
 
 class Membership extends Model
 {
-    use HasUuids, HasFactory;
+    use HasFactory, HasUuids;
 
     protected $table = 'identity_memberships';
+
+    public $timestamps = false;
 
     protected $fillable = [
         'user_id',

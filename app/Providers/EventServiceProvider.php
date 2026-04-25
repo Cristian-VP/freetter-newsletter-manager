@@ -25,8 +25,14 @@ use Domains\Audience\Events\SubscriberUnsubscribed;
 use Domains\Audience\Listeners\MarkSubscriberFromDeliveryBounce;
 use Domains\Community\Events\CommentCreated;
 use Domains\Community\Events\CommentModerated;
+use Domains\Community\Events\PostBookmarked;
 use Domains\Community\Events\PostLiked;
+use Domains\Community\Events\PostReported;
+use Domains\Community\Events\PostReposted;
+use Domains\Community\Events\PostUnbookmarked;
 use Domains\Community\Events\PostUnliked;
+use Domains\Community\Events\UserBlocked;
+use Domains\Community\Events\UserMuted;
 use Domains\Community\Events\WorkspaceFollowed;
 use Domains\Community\Events\WorkspaceUnfollowed;
 use Domains\Delivery\Events\BounceCaptured;
@@ -149,6 +155,30 @@ class EventServiceProvider extends ServiceProvider
         ],
 
         PostUnliked::class => [
+            LogCommunityActivity::class,
+        ],
+
+        PostBookmarked::class => [
+            LogCommunityActivity::class,
+        ],
+
+        PostUnbookmarked::class => [
+            LogCommunityActivity::class,
+        ],
+
+        PostReposted::class => [
+            LogCommunityActivity::class,
+        ],
+
+        UserMuted::class => [
+            LogCommunityActivity::class,
+        ],
+
+        UserBlocked::class => [
+            LogCommunityActivity::class,
+        ],
+
+        PostReported::class => [
             LogCommunityActivity::class,
         ],
 

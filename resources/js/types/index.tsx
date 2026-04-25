@@ -25,6 +25,10 @@ export type PageProps<T extends Record<string, unknown> = Record<string, unknown
   auth: Auth;
   name: string;
   quote: { message: string; author: string };
+  flash?: {
+    success?: string | null;
+    error?: string | null;
+  };
 };
 
 export interface User {

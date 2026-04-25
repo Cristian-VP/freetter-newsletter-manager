@@ -10,10 +10,14 @@ use Domains\Identity\Models\Workspace;
 use Domains\Publishing\Models\Media;
 use Domains\Publishing\Models\Post;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 
 class HomeFeedDemoSeeder extends Seeder
 {
+    private ?string $postMediaPivotTable = null;
+
     public function run(): void
     {
         $workspace = Workspace::query()->firstOrCreate(
@@ -137,7 +141,7 @@ class HomeFeedDemoSeeder extends Seeder
                     ]
                 );
 
-                $post->media()->syncWithoutDetaching([$media->id]);
+                $this->attachMediaToPost((string) $post->id, (string) $media->id);
             }
 
             foreach ($item['likes_from'] as $email) {
@@ -168,5 +172,37 @@ class HomeFeedDemoSeeder extends Seeder
         );
 
         return $user;
+    }
+
+    private function attachMediaToPost(string $postId, string $mediaId): void
+    {
+        DB::table($this->resolvePostMediaPivotTable())->updateOrInsert(
+            [
+                'post_id' => $postId,
+                'media_id' => $mediaId,
+            ],
+            []
+        );
+    }
+
+    private function resolvePostMediaPivotTable(): string
+    {
+        if ($this->postMediaPivotTable !== null) {
+            return $this->postMediaPivotTable;
+        }
+
+        if (Schema::hasTable('publishing_post_media')) {
+            $this->postMediaPivotTable = 'publishing_post_media';
+
+            return $this->postMediaPivotTable;
+        }
+
+        if (Schema::hasTable('publishing__post_media')) {
+            $this->postMediaPivotTable = 'publishing__post_media';
+
+            return $this->postMediaPivotTable;
+        }
+
+        throw new \RuntimeException('No pivot table found for post-media relation. Expected publishing_post_media or publishing__post_media.');
     }
 }

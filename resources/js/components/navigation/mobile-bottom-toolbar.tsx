@@ -18,8 +18,8 @@ export function MobileBottomToolbar({
   userAvatar,
 }: MobileBottomToolbarProps) {
   return (
-    <div className="fixed inset-x-0 bottom-3 z-40 px-3 md:hidden">
-      <NavigationIslandContainer className="mx-auto w-full max-w-md px-2 py-1.5">
+    <div className="pointer-events-none fixed inset-x-0 bottom-[max(0.75rem,env(safe-area-inset-bottom))] z-95 px-3 md:hidden">
+      <NavigationIslandContainer className="pointer-events-auto mx-auto w-full max-w-md px-2 py-1.5 shadow-[0_14px_24px_rgba(0,0,0,0.18)]">
         <nav aria-label="Mobile main navigation" className="flex items-center justify-between gap-1">
           <NavItemIconButton
             icon={House}

@@ -15,6 +15,49 @@ class CommentControllerTest extends TestCase
 {
     use RefreshDatabase;
 
+    public function test_can_list_post_comments_with_replies(): void
+    {
+        $workspace = Workspace::factory()->create();
+        /** @var User $viewer */
+        $viewer = User::factory()->create();
+        $author = User::factory()->create();
+        $replyAuthor = User::factory()->create();
+
+        $post = Post::factory()->create([
+            'workspace_id' => $workspace->id,
+            'author_id' => $author->id,
+        ]);
+
+        $topComment = Comment::factory()->create([
+            'user_id' => $author->id,
+            'workspace_id' => $workspace->id,
+            'post_id' => $post->id,
+            'content' => 'Comentario principal',
+        ]);
+
+        $reply = Comment::factory()->reply($topComment)->create([
+            'user_id' => $replyAuthor->id,
+            'content' => 'Respuesta visible',
+        ]);
+
+        Comment::factory()->reply($topComment)->hidden()->create([
+            'user_id' => $replyAuthor->id,
+            'content' => 'Respuesta oculta',
+        ]);
+
+        $response = $this->actingAs($viewer)->getJson('/community/comments?post_id='.$post->id);
+
+        $response
+            ->assertOk()
+            ->assertJsonCount(1, 'data.comments')
+            ->assertJsonPath('data.comments.0.id', $topComment->id)
+            ->assertJsonPath('data.comments.0.content', 'Comentario principal')
+            ->assertJsonPath('data.comments.0.author.id', $author->id)
+            ->assertJsonPath('data.comments.0.replies_count', 1)
+            ->assertJsonPath('data.comments.0.replies.0.id', $reply->id)
+            ->assertJsonPath('data.comments.0.replies.0.content', 'Respuesta visible');
+    }
+
     public function test_can_create_comment_and_reply_on_post(): void
     {
         Event::fake([CommentCreated::class]);

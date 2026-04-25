@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Support\Facades\Schema;
 
 class Media extends Model
 {
@@ -41,11 +42,24 @@ class Media extends Model
 
     public function posts(): BelongsToMany
     {
-        return $this->belongsToMany(Post::class, 'publishing_post_media', 'media_id', 'post_id');
+        return $this->belongsToMany(Post::class, $this->resolvePostMediaPivotTable(), 'media_id', 'post_id');
     }
 
     public function scopeForWorkspace(Builder $query, string $workspaceId): Builder
     {
         return $query->where('workspace_id', $workspaceId);
+    }
+
+    private function resolvePostMediaPivotTable(): string
+    {
+        if (Schema::hasTable('publishing_post_media')) {
+            return 'publishing_post_media';
+        }
+
+        if (Schema::hasTable('publishing__post_media')) {
+            return 'publishing__post_media';
+        }
+
+        return 'publishing_post_media';
     }
 }

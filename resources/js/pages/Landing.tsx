@@ -1,13 +1,32 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { AuthModal } from '../components/auth-modal';
 import { BurgerMenuButton } from '@/components/navigation/burger-menu-button';
+import { type PageProps } from '@/types';
 
 export default function Landing() {
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
     const [isAuthOpen, setIsAuthOpen] = useState(false);
     const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
-    const { url } = usePage();
+    const [errorSnackbar, setErrorSnackbar] = useState<string | null>(null);
+    const { url, props } = usePage<PageProps>();
+
+    useEffect(() => {
+        const flashError = props.flash?.error;
+        if (!flashError) {
+            return;
+        }
+
+        setErrorSnackbar(flashError);
+
+        const timeoutId = window.setTimeout(() => {
+            setErrorSnackbar(null);
+        }, 5000);
+
+        return () => {
+            window.clearTimeout(timeoutId);
+        };
+    }, [props.flash?.error]);
 
     // Helper para determinar si el link está activo
     const getMobileLinkClass = (path: string) => {
@@ -165,6 +184,14 @@ export default function Landing() {
                     <Link href="#" className="hover:text-zinc-900 transition">Terms</Link>
                 </footer>
                 <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} initialMode={authMode} />
+
+                {errorSnackbar ? (
+                    <div className="pointer-events-none fixed bottom-6 left-1/2 z-60 -translate-x-1/2 px-4">
+                        <div className="pointer-events-auto rounded-full bg-zinc-900 px-4 py-2 text-sm font-medium text-white shadow-[0_10px_22px_rgba(0,0,0,0.25)]">
+                            {errorSnackbar}
+                        </div>
+                    </div>
+                ) : null}
             </div>
         </>
     );

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Schema;
 
 class PostVersion extends Model
 {
@@ -35,5 +36,18 @@ class PostVersion extends Model
     public function post(): BelongsTo
     {
         return $this->belongsTo(Post::class, 'post_id');
+    }
+
+    public function getTable(): string
+    {
+        if (Schema::hasTable('publishing_post_versions')) {
+            return 'publishing_post_versions';
+        }
+
+        if (Schema::hasTable('publishing_post_version')) {
+            return 'publishing_post_version';
+        }
+
+        return parent::getTable();
     }
 }

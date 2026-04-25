@@ -5,8 +5,14 @@ namespace Domains\Activity\Listeners;
 use Domains\Activity\Models\ActivityLog;
 use Domains\Community\Events\CommentCreated;
 use Domains\Community\Events\CommentModerated;
+use Domains\Community\Events\PostBookmarked;
 use Domains\Community\Events\PostLiked;
+use Domains\Community\Events\PostReported;
+use Domains\Community\Events\PostReposted;
+use Domains\Community\Events\PostUnbookmarked;
 use Domains\Community\Events\PostUnliked;
+use Domains\Community\Events\UserBlocked;
+use Domains\Community\Events\UserMuted;
 use Domains\Community\Events\WorkspaceFollowed;
 use Domains\Community\Events\WorkspaceUnfollowed;
 
@@ -77,6 +83,109 @@ class LogCommunityActivity
                 'entity_type' => 'post',
                 'entity_id' => $event->postId,
                 'metadata' => [
+                    'context' => $event->context,
+                ],
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+
+            return;
+        }
+
+        if ($event instanceof PostBookmarked) {
+            ActivityLog::query()->create([
+                'user_id' => $event->bookmark->user_id,
+                'action' => 'community.post.bookmarked',
+                'entity_type' => 'post_bookmark',
+                'entity_id' => $event->bookmark->id,
+                'metadata' => [
+                    'post_id' => $event->bookmark->post_id,
+                    'context' => $event->context,
+                ],
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+
+            return;
+        }
+
+        if ($event instanceof PostUnbookmarked) {
+            ActivityLog::query()->create([
+                'user_id' => $event->userId,
+                'action' => 'community.post.unbookmarked',
+                'entity_type' => 'post',
+                'entity_id' => $event->postId,
+                'metadata' => [
+                    'context' => $event->context,
+                ],
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+
+            return;
+        }
+
+        if ($event instanceof PostReposted) {
+            ActivityLog::query()->create([
+                'user_id' => $event->repost->user_id,
+                'action' => 'community.post.reposted',
+                'entity_type' => 'post_repost',
+                'entity_id' => $event->repost->id,
+                'metadata' => [
+                    'post_id' => $event->repost->post_id,
+                    'context' => $event->context,
+                ],
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+
+            return;
+        }
+
+        if ($event instanceof UserMuted) {
+            ActivityLog::query()->create([
+                'user_id' => $event->mute->user_id,
+                'action' => 'community.user.muted',
+                'entity_type' => 'user_mute',
+                'entity_id' => $event->mute->id,
+                'metadata' => [
+                    'muted_user_id' => $event->mute->muted_user_id,
+                    'context' => $event->context,
+                ],
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+
+            return;
+        }
+
+        if ($event instanceof UserBlocked) {
+            ActivityLog::query()->create([
+                'user_id' => $event->block->user_id,
+                'action' => 'community.user.blocked',
+                'entity_type' => 'user_block',
+                'entity_id' => $event->block->id,
+                'metadata' => [
+                    'blocked_user_id' => $event->block->blocked_user_id,
+                    'context' => $event->context,
+                ],
+                'ip_address' => request()->ip(),
+                'user_agent' => request()->userAgent(),
+            ]);
+
+            return;
+        }
+
+        if ($event instanceof PostReported) {
+            ActivityLog::query()->create([
+                'user_id' => $event->report->user_id,
+                'action' => 'community.post.reported',
+                'entity_type' => 'post_report',
+                'entity_id' => $event->report->id,
+                'metadata' => [
+                    'post_id' => $event->report->post_id,
+                    'category' => $event->report->category,
+                    'status' => $event->report->status,
                     'context' => $event->context,
                 ],
                 'ip_address' => request()->ip(),

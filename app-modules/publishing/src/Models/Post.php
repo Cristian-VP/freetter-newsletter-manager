@@ -12,6 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Schema;
 
 class Post extends Model
 {
@@ -64,7 +65,7 @@ class Post extends Model
 
     public function media(): BelongsToMany
     {
-        return $this->belongsToMany(Media::class, 'publishing_post_media', 'post_id', 'media_id');
+        return $this->belongsToMany(Media::class, $this->resolvePostMediaPivotTable(), 'post_id', 'media_id');
     }
 
     public function scopePublished(Builder $query): Builder
@@ -140,11 +141,45 @@ class Post extends Model
 
     private function extractTextFromContent(): string
     {
-        $text = collect($this->content['blocks'] ?? [])
-            ->pluck('data.text')
+        $blocks = $this->content['blocks'] ?? [];
+
+        if (! is_array($blocks)) {
+            return '';
+        }
+
+        $text = collect($blocks)
+            ->map(function ($block): string {
+                if (! is_array($block)) {
+                    return '';
+                }
+
+                $data = $block['data'] ?? [];
+                if (! is_array($data)) {
+                    return '';
+                }
+
+                if (($block['type'] ?? '') === 'list') {
+                    $items = $data['items'] ?? [];
+                    if (! is_array($items)) {
+                        return '';
+                    }
+
+                    return collect($items)
+                        ->map(fn ($item): string => is_string($item) ? strip_tags($item) : '')
+                        ->filter()
+                        ->join(' ');
+                }
+
+                $candidate = $data['text'] ?? $data['html'] ?? '';
+
+                return is_string($candidate) ? strip_tags($candidate) : '';
+            })
+            ->filter()
             ->join(' ');
 
-        return strip_tags($text);
+        $normalized = preg_replace('/\s+/', ' ', html_entity_decode($text, ENT_QUOTES | ENT_HTML5, 'UTF-8'));
+
+        return trim($normalized ?? '');
     }
 
     public function url(): string
@@ -163,5 +198,18 @@ class Post extends Model
     {
         return $this->status === 'scheduled'
             && $this->published_at?->isPast();
+    }
+
+    private function resolvePostMediaPivotTable(): string
+    {
+        if (Schema::hasTable('publishing_post_media')) {
+            return 'publishing_post_media';
+        }
+
+        if (Schema::hasTable('publishing__post_media')) {
+            return 'publishing__post_media';
+        }
+
+        return 'publishing_post_media';
     }
 }

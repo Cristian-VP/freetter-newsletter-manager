@@ -156,7 +156,8 @@ class MagicLinkAuthenticationTest extends TestCase
 
         $response = $this->get(route('magic-links.authenticate', ['user' => $user->getKey()]));
 
-        $response->assertForbidden();
+        $response->assertRedirect(route('landing'));
+        $response->assertSessionHas('error', 'El enlace de acceso es invalido o ha caducado. Solicita uno nuevo.');
         $this->assertGuest();
     }
 
@@ -189,7 +190,37 @@ class MagicLinkAuthenticationTest extends TestCase
 
         $secondResponse = $this->get($magicLink);
 
-        $secondResponse->assertForbidden();
+        $secondResponse->assertRedirect(route('landing'));
+        $secondResponse->assertSessionHas('error', 'Este enlace ya fue utilizado. Solicita uno nuevo.');
+    }
+
+    public function test_expired_magic_link_redirects_to_landing_with_flash_error(): void
+    {
+        $user = User::factory()->unverified()->create();
+        $token = (string) Str::uuid();
+
+        DB::table('identity_magic_link_tokens')->insert([
+            'id' => (string) Str::uuid(),
+            'user_id' => $user->getKey(),
+            'token_hash' => hash('sha256', $token),
+            'expires_at' => now()->subMinute(),
+            'consumed_at' => null,
+            'created_at' => now()->subHour(),
+        ]);
+
+        $magicLink = URL::temporarySignedRoute(
+            'magic-links.authenticate',
+            now()->addMinutes(30),
+            [
+                'user' => $user->getKey(),
+                'token' => $token,
+            ]
+        );
+
+        $response = $this->get($magicLink);
+
+        $response->assertRedirect(route('landing'));
+        $response->assertSessionHas('error', 'Este enlace ha caducado. Solicita uno nuevo.');
     }
 
     public function test_register_is_rate_limited_after_six_attempts_per_minute(): void

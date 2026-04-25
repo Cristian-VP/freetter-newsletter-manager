@@ -4,7 +4,8 @@ declare(strict_types=1);
 
 namespace Domains\Publishing\Http\Controllers;
 
-use Carbon\CarbonInterface;
+use Domains\Community\Models\BlockedUser;
+use Domains\Community\Models\MutedUser;
 use Domains\Identity\Models\Membership;
 use Domains\Publishing\Models\Media;
 use Domains\Publishing\Models\Post;
@@ -72,11 +73,29 @@ class HomeFeedController extends Controller
      */
     private function buildFeedPayload(string $userId, ?array $cursor, int $limit): array
     {
+        $mutedAuthorIds = MutedUser::query()
+            ->where('user_id', $userId)
+            ->pluck('muted_user_id')
+            ->values();
+
+        $blockedAuthorIds = BlockedUser::query()
+            ->where('user_id', $userId)
+            ->pluck('blocked_user_id')
+            ->values();
+
         $postsQuery = Post::query()
             ->published()
             ->with(['author:id,name,avatar_path', 'media'])
             ->orderByDesc('published_at')
             ->orderByDesc('id');
+
+        if ($mutedAuthorIds->isNotEmpty()) {
+            $postsQuery->whereNotIn('author_id', $mutedAuthorIds);
+        }
+
+        if ($blockedAuthorIds->isNotEmpty()) {
+            $postsQuery->whereNotIn('author_id', $blockedAuthorIds);
+        }
 
         if ($cursor !== null) {
             $postsQuery->where(function ($query) use ($cursor): void {
@@ -98,21 +117,40 @@ class HomeFeedController extends Controller
 
         $postIds = $postsForPage->pluck('id')->values();
 
-        $likeCounts = DB::table('community_likes')
+        $repostCounts = DB::table('community_reposts')
             ->selectRaw('post_id, COUNT(*) as total')
             ->whereIn('post_id', $postIds)
             ->groupBy('post_id')
             ->pluck('total', 'post_id');
 
-        $likedPostIds = DB::table('community_likes')
+        $repostedPostIds = DB::table('community_reposts')
             ->where('user_id', $userId)
             ->whereIn('post_id', $postIds)
             ->pluck('post_id')
             ->flip();
 
-        $feedPosts = $postsForPage->map(function (Post $post) use ($likeCounts, $likedPostIds): array {
+        $bookmarkedPostIds = DB::table('community_bookmarks')
+            ->where('user_id', $userId)
+            ->whereIn('post_id', $postIds)
+            ->pluck('post_id')
+            ->flip();
+
+        $workspaceIds = $postsForPage->pluck('workspace_id')->filter()->values();
+
+        $followedWorkspaceIds = DB::table('community_followers')
+            ->where('follower_id', $userId)
+            ->whereIn('followed_workspace_id', $workspaceIds)
+            ->pluck('followed_workspace_id')
+            ->flip();
+
+        $feedPosts = $postsForPage->map(function (Post $post) use ($repostCounts, $repostedPostIds, $bookmarkedPostIds, $followedWorkspaceIds): array {
             $contentText = $post->getExcerpt(500);
             $publishedAt = $post->published_at;
+            $contentBlocks = $post->content['blocks'] ?? [];
+
+            if (! is_array($contentBlocks)) {
+                $contentBlocks = [];
+            }
 
             return [
                 'id' => $post->id,
@@ -121,15 +159,13 @@ class HomeFeedController extends Controller
                     'name' => $post->author?->name,
                     'avatar_url' => $this->resolveAvatarUrl($post->author?->avatar_path),
                 ],
+                'workspace_id' => $post->workspace_id,
                 'published_at' => $publishedAt?->toIso8601String(),
-                'published_relative' => $publishedAt?->diffForHumans(now(), [
-                    'syntax' => CarbonInterface::DIFF_RELATIVE_TO_NOW,
-                    'short' => true,
-                    'parts' => 1,
-                ]),
+                'published_relative' => $publishedAt ? $this->relativeTimeInSpanish($publishedAt) : 'ahora',
+                'post_url' => route('home').'#post-'.$post->id,
                 'content' => [
-                    'title' => $post->title,
-                    'excerpt' => $contentText,
+                    'blocks' => $contentBlocks,
+                    'plain_text' => $contentText,
                 ],
                 'media' => $post->media->map(function ($media): array {
                     return [
@@ -139,8 +175,10 @@ class HomeFeedController extends Controller
                     ];
                 })->values()->all(),
                 'metrics' => [
-                    'likes_count' => (int) ($likeCounts[$post->id] ?? 0),
-                    'liked_by_me' => isset($likedPostIds[$post->id]),
+                    'reposts_count' => (int) ($repostCounts[$post->id] ?? 0),
+                    'reposted_by_me' => isset($repostedPostIds[$post->id]),
+                    'bookmarked_by_me' => isset($bookmarkedPostIds[$post->id]),
+                    'subscribed_to_workspace' => isset($followedWorkspaceIds[$post->workspace_id]),
                 ],
             ];
         })->values();
@@ -159,6 +197,44 @@ class HomeFeedController extends Controller
             'has_more' => $hasMore,
             'next_cursor' => $nextCursor,
         ];
+    }
+
+    private function relativeTimeInSpanish(Carbon $publishedAt): string
+    {
+        $now = now();
+
+        if ($publishedAt->diffInSeconds($now) < 45) {
+            return 'ahora';
+        }
+
+        $minutes = max(1, (int) floor($publishedAt->diffInMinutes($now)));
+        if ($minutes < 60) {
+            return $minutes === 1 ? '1 minuto' : $minutes.' minutos';
+        }
+
+        $hours = max(1, (int) floor($publishedAt->diffInHours($now)));
+        if ($hours < 24) {
+            return $hours === 1 ? '1 hora' : $hours.' horas';
+        }
+
+        $days = max(1, (int) floor($publishedAt->diffInDays($now)));
+        if ($days < 7) {
+            return $days === 1 ? '1 dia' : $days.' dias';
+        }
+
+        $weeks = max(1, (int) floor($days / 7));
+        if ($weeks < 5) {
+            return $weeks === 1 ? '1 semana' : $weeks.' semanas';
+        }
+
+        $months = max(1, (int) floor($publishedAt->diffInMonths($now)));
+        if ($months < 12) {
+            return $months === 1 ? '1 mes' : $months.' meses';
+        }
+
+        $years = max(1, (int) floor($publishedAt->diffInYears($now)));
+
+        return $years === 1 ? '1 ano' : $years.' anos';
     }
 
     private function resolveMediaUrl(Media $media): string
