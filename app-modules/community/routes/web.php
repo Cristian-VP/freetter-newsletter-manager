@@ -10,6 +10,12 @@ use Domains\Community\Http\Controllers\MuteController;
 use Domains\Community\Http\Controllers\ReportController;
 use Domains\Community\Http\Controllers\RepostController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
+
+Route::middleware(['web', 'auth'])->group(function (): void {
+    Route::get('/subscriptions', static fn () => Inertia::render('community::Subscriptions'))
+        ->name('subscriptions');
+});
 
 Route::prefix('community')->name('community.')->middleware(['web', 'auth'])->group(function (): void {
     Route::get('/comments', [CommentController::class, 'index'])

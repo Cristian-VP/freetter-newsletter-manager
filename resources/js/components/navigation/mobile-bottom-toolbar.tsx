@@ -5,15 +5,13 @@ import { type HomeNavItemKey } from "@/components/navigation/types";
 import { House, PencilLine, UsersRound } from "lucide-react";
 
 interface MobileBottomToolbarProps {
-  activeItem: HomeNavItemKey;
-  onSelect: (item: HomeNavItemKey) => void;
+  activeItem: HomeNavItemKey | null;
   userName?: string;
   userAvatar?: string;
 }
 
 export function MobileBottomToolbar({
   activeItem,
-  onSelect,
   userName,
   userAvatar,
 }: MobileBottomToolbarProps) {
@@ -26,7 +24,6 @@ export function MobileBottomToolbar({
             label="Home"
             isActive={activeItem === "home"}
             href="/home"
-            onClick={() => onSelect("home")}
             className="px-3"
           />
 
@@ -34,7 +31,7 @@ export function MobileBottomToolbar({
             icon={UsersRound}
             label="Subscripciones"
             isActive={activeItem === "subscriptions"}
-            onClick={() => onSelect("subscriptions")}
+            href="/subscriptions"
             className="px-3"
           />
 
@@ -42,7 +39,7 @@ export function MobileBottomToolbar({
             icon={PencilLine}
             label="Crear"
             isActive={activeItem === "create"}
-            onClick={() => onSelect("create")}
+            href="/newsletters/resume"
             className="px-3"
           />
 
@@ -50,7 +47,7 @@ export function MobileBottomToolbar({
             name={userName}
             avatar={userAvatar}
             isActive={activeItem === "profile"}
-            onClick={() => onSelect("profile")}
+            href="/profile"
             className="px-3"
           />
         </nav>
