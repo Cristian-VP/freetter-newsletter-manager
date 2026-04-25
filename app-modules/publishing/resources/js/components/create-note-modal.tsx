@@ -10,7 +10,7 @@ import {
   ListOrdered,
   Loader2,
   Quote,
-  Underline,
+  Strikethrough,
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -18,8 +18,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 interface CreateNoteModalProps {
   isOpen: boolean;
   workspaceId: string | null;
+  initialQuote?: {
+    postId: string;
+    authorName: string;
+    text: string;
+    postUrl: string;
+  } | null;
   onClose: () => void;
-  onPublished: () => void;
+  onPublished: (payload: { postId: string | null }) => void;
 }
 
 type SelectionToolbarState = {
@@ -28,8 +34,27 @@ type SelectionToolbarState = {
   top: number;
 };
 
+type ActiveFormatsState = {
+  bold: boolean;
+  italic: boolean;
+  strike: boolean;
+  unorderedList: boolean;
+  orderedList: boolean;
+  quote: boolean;
+  link: boolean;
+};
+
 const MAX_IMAGES = 8;
-const INLINE_ALLOWED_TAGS = new Set(["A", "B", "BR", "EM", "I", "STRONG", "U"]);
+const INLINE_ALLOWED_TAGS = new Set(["A", "B", "BR", "DEL", "EM", "I", "S", "STRIKE", "STRONG", "U"]);
+const EMPTY_ACTIVE_FORMATS: ActiveFormatsState = {
+  bold: false,
+  italic: false,
+  strike: false,
+  unorderedList: false,
+  orderedList: false,
+  quote: false,
+  link: false,
+};
 
 function initialsFromName(name: string | null | undefined): string {
   if (!name) {
@@ -135,6 +160,15 @@ function extractPlainTextFromHtml(html: string): string {
   return text.replace(/\s+/g, " ").trim();
 }
 
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 function buildPostBlocksFromHtml(html: string): Array<Record<string, unknown>> {
   const parser = new DOMParser();
   const documentNode = parser.parseFromString(`<div>${html}</div>`, "text/html");
@@ -145,21 +179,36 @@ function buildPostBlocksFromHtml(html: string): Array<Record<string, unknown>> {
   }
 
   const blocks: Array<Record<string, unknown>> = [];
+  let paragraphBuffer = "";
+
+  const flushParagraphBuffer = () => {
+    const htmlValue = sanitizeInlineHtml(paragraphBuffer);
+    const textValue = extractPlainTextFromHtml(paragraphBuffer);
+
+    if (htmlValue.length === 0 && textValue.length === 0) {
+      paragraphBuffer = "";
+      return;
+    }
+
+    blocks.push({
+      type: "paragraph",
+      data: {
+        text: textValue,
+        html: htmlValue,
+      },
+    });
+
+    paragraphBuffer = "";
+  };
 
   Array.from(root.childNodes).forEach((node) => {
     if (node.nodeType === Node.TEXT_NODE) {
-      const value = (node.textContent ?? "").trim();
-      if (value.length === 0) {
+      const value = node.textContent ?? "";
+      if (value.trim().length === 0) {
         return;
       }
 
-      blocks.push({
-        type: "paragraph",
-        data: {
-          text: value,
-          html: sanitizeInlineHtml(value),
-        },
-      });
+      paragraphBuffer += escapeHtml(value);
       return;
     }
 
@@ -170,6 +219,8 @@ function buildPostBlocksFromHtml(html: string): Array<Record<string, unknown>> {
     const tagName = node.tagName.toUpperCase();
 
     if (tagName === "UL" || tagName === "OL") {
+      flushParagraphBuffer();
+
       const items = Array.from(node.querySelectorAll(":scope > li"))
         .map((item) => sanitizeInlineHtml(item.innerHTML))
         .filter((item) => item.length > 0);
@@ -188,6 +239,8 @@ function buildPostBlocksFromHtml(html: string): Array<Record<string, unknown>> {
     }
 
     if (tagName === "BLOCKQUOTE") {
+      flushParagraphBuffer();
+
       const htmlValue = sanitizeInlineHtml(node.innerHTML);
       const textValue = extractPlainTextFromHtml(node.innerHTML);
 
@@ -206,26 +259,58 @@ function buildPostBlocksFromHtml(html: string): Array<Record<string, unknown>> {
       return;
     }
 
-    const htmlValue = sanitizeInlineHtml(node.innerHTML);
-    const textValue = extractPlainTextFromHtml(node.innerHTML);
+    if (tagName === "DIV" || tagName === "P") {
+      const nestedQuote = node.querySelector(":scope > blockquote");
+      if (nestedQuote) {
+        flushParagraphBuffer();
 
-    if (htmlValue.length === 0 && textValue.length === 0) {
+        const htmlValue = sanitizeInlineHtml(nestedQuote.innerHTML);
+        const textValue = extractPlainTextFromHtml(nestedQuote.innerHTML);
+
+        if (htmlValue.length === 0 && textValue.length === 0) {
+          return;
+        }
+
+        blocks.push({
+          type: "quote",
+          data: {
+            text: textValue,
+            html: htmlValue,
+          },
+        });
+
+        return;
+      }
+
+      flushParagraphBuffer();
+
+      const htmlValue = sanitizeInlineHtml(node.innerHTML);
+      const textValue = extractPlainTextFromHtml(node.innerHTML);
+
+      if (htmlValue.length === 0 && textValue.length === 0) {
+        return;
+      }
+
+      blocks.push({
+        type: "paragraph",
+        data: {
+          text: textValue,
+          html: htmlValue,
+        },
+      });
+
       return;
     }
 
-    blocks.push({
-      type: "paragraph",
-      data: {
-        text: textValue,
-        html: htmlValue,
-      },
-    });
+    paragraphBuffer += node.outerHTML;
   });
+
+  flushParagraphBuffer();
 
   return blocks;
 }
 
-export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: CreateNoteModalProps) {
+export function CreateNoteModal({ isOpen, workspaceId, initialQuote = null, onClose, onPublished }: CreateNoteModalProps) {
   const { auth } = usePage<PageProps>().props;
   const editorRef = useRef<HTMLDivElement | null>(null);
   const selectionToolbarRef = useRef<HTMLDivElement | null>(null);
@@ -245,6 +330,7 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
     left: 0,
     top: 0,
   });
+  const [activeFormats, setActiveFormats] = useState<ActiveFormatsState>(EMPTY_ACTIVE_FORMATS);
   const [isLinkComposerOpen, setIsLinkComposerOpen] = useState(false);
   const [linkValue, setLinkValue] = useState("");
 
@@ -292,6 +378,44 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
       return;
     }
 
+    const findClosestTag = (node: Node | null, tagName: string, root: HTMLElement): HTMLElement | null => {
+      let currentNode: Node | null = node;
+
+      while (currentNode) {
+        if (currentNode instanceof HTMLElement && currentNode.tagName.toUpperCase() === tagName) {
+          return currentNode;
+        }
+
+        if (currentNode === root) {
+          break;
+        }
+
+        currentNode = currentNode.parentNode;
+      }
+
+      return null;
+    };
+
+    const syncActiveFormats = (selection: Selection, editorElement: HTMLDivElement) => {
+      const range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+      const anchorNode = range?.commonAncestorContainer ?? selection.anchorNode;
+      const quoteTag = findClosestTag(anchorNode, "BLOCKQUOTE", editorElement);
+      const linkTag = findClosestTag(anchorNode, "A", editorElement);
+      const formatBlockValue = String(document.queryCommandValue("formatBlock") ?? "")
+        .toLowerCase()
+        .replace(/[<>]/g, "");
+
+      setActiveFormats({
+        bold: document.queryCommandState("bold"),
+        italic: document.queryCommandState("italic"),
+        strike: document.queryCommandState("strikeThrough"),
+        unorderedList: document.queryCommandState("insertUnorderedList"),
+        orderedList: document.queryCommandState("insertOrderedList"),
+        quote: quoteTag !== null || formatBlockValue === "blockquote",
+        link: linkTag !== null,
+      });
+    };
+
     const handleSelectionChange = () => {
       const editorElement = editorRef.current;
       if (!editorElement) {
@@ -301,18 +425,31 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
       const selection = window.getSelection();
       if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
         setSelectionToolbar((previous) => ({ ...previous, isVisible: false }));
+        setActiveFormats(EMPTY_ACTIVE_FORMATS);
         return;
       }
 
       const range = selection.getRangeAt(0);
       if (!editorElement.contains(range.commonAncestorContainer)) {
         setSelectionToolbar((previous) => ({ ...previous, isVisible: false }));
+        setActiveFormats(EMPTY_ACTIVE_FORMATS);
         return;
       }
 
       savedSelectionRangeRef.current = range.cloneRange();
+      syncActiveFormats(selection, editorElement);
 
-      const rect = range.getBoundingClientRect();
+      const selectionRect = range.getClientRects()[0] ?? range.getBoundingClientRect();
+      const editorRect = editorElement.getBoundingClientRect();
+      const hasRect = selectionRect.width > 0 || selectionRect.height > 0;
+      const rect = hasRect
+        ? selectionRect
+        : {
+            left: editorRect.left + 24,
+            width: 0,
+            top: editorRect.top + 12,
+            height: 0,
+          };
       const toolbarWidth = 278;
       const left = Math.min(window.innerWidth - toolbarWidth - 12, Math.max(12, rect.left + rect.width / 2 - toolbarWidth / 2));
       const top = Math.max(12, rect.top - 58);
@@ -339,6 +476,7 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
       }
 
       setSelectionToolbar((previous) => ({ ...previous, isVisible: false }));
+      setActiveFormats(EMPTY_ACTIVE_FORMATS);
       setIsLinkComposerOpen(false);
     };
 
@@ -377,7 +515,20 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
     editorRef.current.focus();
     document.execCommand(command, false, value);
     syncEditorHtml();
-    setSelectionToolbar((previous) => ({ ...previous, isVisible: false }));
+
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0) {
+      setActiveFormats(EMPTY_ACTIVE_FORMATS);
+      return;
+    }
+
+    const editorElement = editorRef.current;
+    if (!editorElement || !editorElement.contains(selection.getRangeAt(0).commonAncestorContainer)) {
+      setActiveFormats(EMPTY_ACTIVE_FORMATS);
+      return;
+    }
+
+    document.dispatchEvent(new Event("selectionchange"));
   };
 
   const openLinkComposer = () => {
@@ -444,7 +595,7 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
 
     document.execCommand("createLink", false, normalizedUrl);
     syncEditorHtml();
-    setSelectionToolbar((previous) => ({ ...previous, isVisible: false }));
+    setActiveFormats((previous) => ({ ...previous, link: true }));
     closeLinkComposer();
   };
 
@@ -504,6 +655,7 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
       left: 0,
       top: 0,
     });
+    setActiveFormats(EMPTY_ACTIVE_FORMATS);
     closeLinkComposer();
   };
 
@@ -528,9 +680,22 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
 
     const rawHtml = editorRef.current?.innerHTML ?? "";
     const blocks = buildPostBlocksFromHtml(rawHtml);
+    const quoteBlocks =
+      initialQuote && initialQuote.text.trim().length > 0
+        ? [
+            {
+              type: "quote",
+              data: {
+                text: `${initialQuote.authorName}: ${initialQuote.text} ${initialQuote.postUrl}`,
+                html: `<a href="${escapeHtml(initialQuote.postUrl)}">Post de ${escapeHtml(initialQuote.authorName)}</a><br>${escapeHtml(initialQuote.text)}`,
+              },
+            },
+          ]
+        : [];
+    const allBlocks = [...blocks, ...quoteBlocks];
     const plainText = editorPlainText;
 
-    if (plainText.length === 0 || blocks.length === 0) {
+    if (plainText.length === 0 || allBlocks.length === 0) {
       setErrorMessage("Escribe contenido antes de publicar.");
       return;
     }
@@ -546,7 +711,7 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
     formData.append(
       "content",
       JSON.stringify({
-        blocks,
+        blocks: allBlocks,
       })
     );
 
@@ -575,8 +740,14 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
         return;
       }
 
+      const payload = (await response.json()) as {
+        data?: {
+          id?: string;
+        };
+      };
+
       resetComposer();
-      onPublished();
+      onPublished({ postId: payload.data?.id ?? null });
     } catch {
       setErrorMessage("No se pudo conectar con el servidor para publicar el post.");
     } finally {
@@ -685,7 +856,7 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
                     document.execCommand("insertText", false, pastedText);
                     syncEditorHtml();
                   }}
-                  className="max-h-[42vh] min-h-24 w-full max-w-full overflow-y-auto wrap-anywhere bg-transparent text-[30px] leading-tight tracking-tight text-zinc-900 outline-none md:min-h-26 md:text-[20px]"
+                  className="max-h-[42vh] min-h-24 w-full max-w-full overflow-y-auto wrap-anywhere bg-transparent text-[30px] leading-tight tracking-tight text-zinc-900 outline-none [&_a]:underline [&_a]:underline-offset-3 [&_blockquote]:my-2 [&_blockquote]:border-l-3 [&_blockquote]:border-zinc-300 [&_blockquote]:pl-3 [&_blockquote]:text-zinc-700 [&_ol]:list-decimal [&_ol]:pl-6 [&_ul]:list-disc [&_ul]:pl-6 md:min-h-26 md:text-[20px]"
                 />
 
                 {selectionToolbar.isVisible ? (
@@ -701,7 +872,9 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
                       type="button"
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={() => applyEditorCommand("bold")}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/90 transition hover:bg-white/12"
+                      className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition ${
+                        activeFormats.bold ? "bg-white/20 text-white" : "text-white/90 hover:bg-white/12"
+                      }`}
                       aria-label="Negrita"
                     >
                       <Bold className="h-4 w-4" />
@@ -710,7 +883,9 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
                       type="button"
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={() => applyEditorCommand("italic")}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/90 transition hover:bg-white/12"
+                      className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition ${
+                        activeFormats.italic ? "bg-white/20 text-white" : "text-white/90 hover:bg-white/12"
+                      }`}
                       aria-label="Cursiva"
                     >
                       <Italic className="h-4 w-4" />
@@ -718,17 +893,21 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
                     <button
                       type="button"
                       onMouseDown={(event) => event.preventDefault()}
-                      onClick={() => applyEditorCommand("underline")}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/90 transition hover:bg-white/12"
-                      aria-label="Subrayado"
+                      onClick={() => applyEditorCommand("strikeThrough")}
+                      className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition ${
+                        activeFormats.strike ? "bg-white/20 text-white" : "text-white/90 hover:bg-white/12"
+                      }`}
+                      aria-label="Tachado"
                     >
-                      <Underline className="h-4 w-4" />
+                      <Strikethrough className="h-4 w-4" />
                     </button>
                     <button
                       type="button"
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={openLinkComposer}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/90 transition hover:bg-white/12"
+                      className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition ${
+                        activeFormats.link ? "bg-white/20 text-white" : "text-white/90 hover:bg-white/12"
+                      }`}
                       aria-label="Insertar enlace"
                     >
                       <Link2 className="h-4 w-4" />
@@ -737,7 +916,9 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
                       type="button"
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={() => applyEditorCommand("insertUnorderedList")}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/90 transition hover:bg-white/12"
+                      className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition ${
+                        activeFormats.unorderedList ? "bg-white/20 text-white" : "text-white/90 hover:bg-white/12"
+                      }`}
                       aria-label="Lista con viñetas"
                     >
                       <List className="h-4 w-4" />
@@ -746,7 +927,9 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
                       type="button"
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={() => applyEditorCommand("insertOrderedList")}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/90 transition hover:bg-white/12"
+                      className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition ${
+                        activeFormats.orderedList ? "bg-white/20 text-white" : "text-white/90 hover:bg-white/12"
+                      }`}
                       aria-label="Lista numerada"
                     >
                       <ListOrdered className="h-4 w-4" />
@@ -755,7 +938,9 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
                       type="button"
                       onMouseDown={(event) => event.preventDefault()}
                       onClick={handleInsertQuote}
-                      className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-white/90 transition hover:bg-white/12"
+                      className={`inline-flex h-8 w-8 items-center justify-center rounded-lg transition ${
+                        activeFormats.quote ? "bg-white/20 text-white" : "text-white/90 hover:bg-white/12"
+                      }`}
                       aria-label="Insertar cita"
                     >
                       <Quote className="h-4 w-4" />
@@ -811,6 +996,21 @@ export function CreateNoteModal({ isOpen, workspaceId, onClose, onPublished }: C
                   </div>
                 ) : null}
               </div>
+
+              {initialQuote ? (
+                <div className="mt-3 rounded-2xl border border-zinc-300 bg-zinc-100 p-3 text-sm text-zinc-800">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500">Citando</p>
+                  <a
+                    href={initialQuote.postUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mt-1 block line-clamp-1 font-semibold text-zinc-900 underline underline-offset-2"
+                  >
+                    Post de {initialQuote.authorName}
+                  </a>
+                  <p className="line-clamp-2 text-zinc-700">{initialQuote.text}</p>
+                </div>
+              ) : null}
             </div>
           </div>
 

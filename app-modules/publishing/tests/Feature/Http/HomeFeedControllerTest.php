@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Domains\Publishing\Tests\Feature\Http;
 
-use Domains\Community\Models\Like;
+use Domains\Community\Models\Bookmark;
+use Domains\Community\Models\Follower;
+use Domains\Community\Models\Repost;
 use Domains\Identity\Models\Membership;
 use Domains\Identity\Models\User;
 use Domains\Identity\Models\Workspace;
@@ -162,19 +164,24 @@ class HomeFeedControllerTest extends TestCase
 
         $recentPost->media()->attach($media->id);
 
-        Like::factory()->create([
+        Repost::factory()->create([
             'user_id' => $viewer->id,
             'post_id' => $recentPost->id,
         ]);
 
-        Like::factory()->create([
+        Repost::factory()->create([
             'user_id' => User::factory()->create()->id,
             'post_id' => $recentPost->id,
         ]);
 
-        Like::factory()->create([
-            'user_id' => User::factory()->create()->id,
+        Bookmark::factory()->create([
+            'user_id' => $viewer->id,
             'post_id' => $oldPost->id,
+        ]);
+
+        Follower::factory()->create([
+            'follower_id' => $viewer->id,
+            'followed_workspace_id' => $workspace->id,
         ]);
 
         $response = $this->actingAs($viewer)->get('/home');
@@ -187,12 +194,15 @@ class HomeFeedControllerTest extends TestCase
             ->where('posts.0.id', $ownPost->id)
             ->where('posts.1.id', $recentPost->id)
             ->where('posts.1.author.name', 'Author B')
-            ->where('posts.1.metrics.likes_count', 2)
-            ->where('posts.1.metrics.liked_by_me', true)
+            ->where('posts.1.metrics.reposts_count', 2)
+            ->where('posts.1.metrics.reposted_by_me', true)
+            ->where('posts.1.metrics.bookmarked_by_me', false)
+            ->where('posts.1.metrics.subscribed_to_workspace', true)
             ->where('posts.1.media.0.url', 'https://images.example.com/recent-post.jpg')
             ->where('posts.2.id', $oldPost->id)
-            ->where('posts.2.metrics.likes_count', 1)
-            ->where('posts.2.metrics.liked_by_me', false)
+            ->where('posts.2.metrics.reposts_count', 0)
+            ->where('posts.2.metrics.reposted_by_me', false)
+            ->where('posts.2.metrics.bookmarked_by_me', true)
             ->missing('posts.3')
         );
 
@@ -244,6 +254,39 @@ class HomeFeedControllerTest extends TestCase
             ->assertJsonCount(5, 'data.posts')
             ->assertJsonPath('data.has_more', false)
             ->assertJsonPath('data.next_cursor', null);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_home_feed_returns_spanish_relative_time_without_ago_suffix(): void
+    {
+        Carbon::setTestNow('2026-04-18 10:00:00');
+
+        $workspace = Workspace::factory()->create();
+        /** @var User $viewer */
+        $viewer = User::withoutEvents(static function (): User {
+            return User::factory()->create();
+        });
+        $author = User::factory()->create();
+
+        Membership::factory()
+            ->forUser($viewer)
+            ->forWorkspace($workspace)
+            ->writer()
+            ->create();
+
+        Post::factory()->published()->create([
+            'workspace_id' => $workspace->id,
+            'author_id' => $author->id,
+            'published_at' => now()->subDay(),
+        ]);
+
+        $response = $this->actingAs($viewer)->get('/home');
+
+        $response->assertOk();
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->where('posts.0.published_relative', '1 dia')
+        );
 
         Carbon::setTestNow();
     }

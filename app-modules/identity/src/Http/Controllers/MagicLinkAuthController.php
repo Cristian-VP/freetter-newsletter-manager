@@ -62,16 +62,42 @@ class MagicLinkAuthController extends Controller
 
     public function authenticate(Request $request, string $user): RedirectResponse
     {
-        $identityUser = User::query()->findOrFail($user);
+        if (! URL::hasValidSignature($request)) {
+            return redirect()->route('landing')->with('error', 'El enlace de acceso es invalido o ha caducado. Solicita uno nuevo.');
+        }
+
+        $identityUser = User::query()->find($user);
+        if (! $identityUser) {
+            return redirect()->route('landing')->with('error', 'El enlace de acceso no es valido para esta cuenta.');
+        }
+
         $token = $request->query('token');
 
         if (! is_string($token) || $token === '') {
-            abort(403, 'Invalid magic link token.');
+            return redirect()->route('landing')->with('error', 'El enlace de acceso no contiene un token valido.');
+        }
+
+        $tokenHash = hash('sha256', $token);
+        $magicToken = DB::table('identity_magic_link_tokens')
+            ->where('user_id', $identityUser->getKey())
+            ->where('token_hash', $tokenHash)
+            ->first();
+
+        if ($magicToken === null) {
+            return redirect()->route('landing')->with('error', 'El enlace de acceso no es valido. Solicita uno nuevo.');
+        }
+
+        if ($magicToken->consumed_at !== null) {
+            return redirect()->route('landing')->with('error', 'Este enlace ya fue utilizado. Solicita uno nuevo.');
+        }
+
+        if (now()->greaterThanOrEqualTo($magicToken->expires_at)) {
+            return redirect()->route('landing')->with('error', 'Este enlace ha caducado. Solicita uno nuevo.');
         }
 
         $tokenWasConsumed = DB::table('identity_magic_link_tokens')
             ->where('user_id', $identityUser->getKey())
-            ->where('token_hash', hash('sha256', $token))
+            ->where('token_hash', $tokenHash)
             ->whereNull('consumed_at')
             ->where('expires_at', '>', now())
             ->update([
@@ -79,7 +105,7 @@ class MagicLinkAuthController extends Controller
             ]);
 
         if ($tokenWasConsumed === 0) {
-            abort(403, 'This magic link is invalid or already used.');
+            return redirect()->route('landing')->with('error', 'No fue posible validar este enlace. Solicita uno nuevo.');
         }
 
         if ($identityUser->email_verified_at === null) {

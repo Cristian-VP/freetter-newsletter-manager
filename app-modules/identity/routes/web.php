@@ -23,7 +23,6 @@ Route::get('/login', static fn () => redirect()->route('landing'))
 
 Route::get('/magic-links/{user}', [MagicLinkAuthController::class, 'authenticate'])
     ->middleware('web')
-    ->middleware('signed')
     ->name('magic-links.authenticate');
 
 Route::get('/auth/session-status', [MagicLinkAuthController::class, 'sessionStatus'])
