@@ -2,9 +2,39 @@
 
 ## Fecha de corte
 
-21 de abril de 2026.
+26 de abril de 2026.
 
 Este documento describe el estado real del repositorio hoy: avance funcional, brechas tecnicas y prioridades inmediatas.
+
+## 0.8. Actualización Incremental Publishing Índice Editorial Backend (26-04-2026)
+
+- fecha: 26 de abril de 2026
+- qué cambió realmente en código:
+    - Se implementó el contrato backend del índice editorial en `publishing` para listar newsletters por estado con filtros y paginación.
+    - Se agregó endpoint autenticado `GET /publishing/newsletters` en rutas del módulo `publishing`.
+    - Se agregó `IndexNewslettersRequest` para validar query params (`workspace_id`, `status`, `q`, `page`, `per_page`).
+    - Se agregó `NewsletterIndexController` con:
+        - filtro de acceso por membresía a workspaces del usuario autenticado,
+        - respuesta con `items`, `filters`, `meta` y `counts_by_status`,
+        - filtros por estado (`draft`, `scheduled`, `published`, `all`),
+        - búsqueda por texto y paginación acotada (máximo 30 por página),
+        - URLs de continuidad para abrir flujo de builder por item.
+    - Se agregó test feature dedicado `NewsletterIndexControllerTest` cubriendo:
+        - acceso guest (401),
+        - autorización por workspace (403),
+        - validación de query params (422),
+        - filtros por estado,
+        - búsqueda y paginación.
+- validación ejecutada:
+    - `vendor/bin/pint --dirty --format agent` -> pass
+    - `php artisan test --compact app-modules/publishing/tests/Feature/Http/NewsletterIndexControllerTest.php` -> 5 pasaron (22 assertions)
+- qué riesgos se cerraron:
+    - Se cerró el gap backend para la pantalla editorial `/newsletters/resume` al contar con un contrato JSON explícito y versionable.
+    - Se cerró el riesgo de fuga de datos cross-workspace al restringir resultados por membresía del usuario autenticado.
+    - Se cerró el riesgo de ambigüedad funcional entre estados editoriales al formalizar `draft`, `scheduled`, `published` y `all` en el contrato.
+- qué riesgos nuevos aparecieron:
+    - No se detectan riesgos críticos nuevos en backend para este alcance.
+    - Riesgo residual no bloqueante: falta consumo frontend del contrato en `NewsletterResume` (fuera de alcance de esta implementación).
 
 ## 0. Actualización Incremental (25-03-2026)
 
