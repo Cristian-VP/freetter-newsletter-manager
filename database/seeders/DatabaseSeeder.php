@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use Domains\Community\Database\Seeders\SubscriptionsDemoSeeder;
 use Domains\Publishing\Database\Seeders\HomeFeedDemoSeeder;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -17,6 +18,7 @@ class DatabaseSeeder extends Seeder
     {
         $this->call([
             HomeFeedDemoSeeder::class,
+            SubscriptionsDemoSeeder::class,
         ]);
     }
 }
