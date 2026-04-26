@@ -5,7 +5,7 @@ import { MobileTopHeader } from "@/components/navigation/mobile-top-header";
 import { type HomeNavItemKey } from "@/components/navigation/types";
 import { cn } from "@/lib/utils";
 import { type PageProps } from "@/types";
-import { usePage } from "@inertiajs/react";
+import { router, usePage } from "@inertiajs/react";
 import { useState } from "react";
 
 interface AuthenticatedHomeLayoutProps {
@@ -14,18 +14,22 @@ interface AuthenticatedHomeLayoutProps {
 }
 
 export default function AuthenticatedHomeLayout({ children, onCreateClick }: AuthenticatedHomeLayoutProps) {
-  const { auth } = usePage<PageProps>().props;
-  const [activeItem, setActiveItem] = useState<HomeNavItemKey>("home");
+  const page = usePage<PageProps>();
+  const { auth } = page.props;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDesktopExpanded, setIsDesktopExpanded] = useState(false);
   const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false);
 
-  const handlePostCreateClick = () => {
-    onCreateClick?.();
-  };
+  const activeItem = resolveActiveNavItem(page.url);
 
-  const handleSelect = (item: HomeNavItemKey) => {
-    setActiveItem(item);
+  const handlePostCreateClick = () => {
+    if (onCreateClick) {
+      onCreateClick();
+
+      return;
+    }
+
+    router.visit("/newsletters/create");
   };
 
   return (
@@ -44,7 +48,6 @@ export default function AuthenticatedHomeLayout({ children, onCreateClick }: Aut
         onMouseLeave={() => setIsDesktopExpanded(false)}
         onToggleMenu={() => setIsDesktopMenuOpen((value) => !value)}
         onCreatePostClick={handlePostCreateClick}
-        onSelect={handleSelect}
         userName={auth.user?.name}
         userAvatar={auth.user?.avatar}
       />
@@ -61,10 +64,38 @@ export default function AuthenticatedHomeLayout({ children, onCreateClick }: Aut
 
       <MobileBottomToolbar
         activeItem={activeItem}
-        onSelect={handleSelect}
         userName={auth.user?.name}
         userAvatar={auth.user?.avatar}
       />
     </div>
   );
+}
+
+function resolveActiveNavItem(url: string): HomeNavItemKey | null {
+  const pathname = normalizePathname(url);
+
+  if (pathname === "/home" || pathname.startsWith("/home/")) {
+    return "home";
+  }
+
+  if (pathname === "/subscriptions" || pathname.startsWith("/subscriptions/")) {
+    return "subscriptions";
+  }
+
+  if (pathname === "/newsletters/create" || pathname.startsWith("/newsletters/")) {
+    return "create";
+  }
+
+  if (pathname === "/profile" || pathname.startsWith("/profile/")) {
+    return "profile";
+  }
+
+  return null;
+}
+
+function normalizePathname(url: string): string {
+  const [path] = url.split("?");
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+  return normalizedPath.length > 1 ? normalizedPath.replace(/\/+$/, "") : normalizedPath;
 }

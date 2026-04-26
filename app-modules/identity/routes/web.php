@@ -4,6 +4,7 @@ use Domains\Identity\Http\Controllers\InvitationController;
 use Domains\Identity\Http\Controllers\MagicLinkAuthController;
 use Domains\Identity\Http\Controllers\WorkspaceController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::post('/register', [MagicLinkAuthController::class, 'register'])
     ->middleware('web')
@@ -28,6 +29,11 @@ Route::get('/magic-links/{user}', [MagicLinkAuthController::class, 'authenticate
 Route::get('/auth/session-status', [MagicLinkAuthController::class, 'sessionStatus'])
     ->middleware('web')
     ->name('auth.session-status');
+
+Route::middleware(['web', 'auth'])->group(function (): void {
+    Route::get('/profile', static fn () => Inertia::render('identity::Profile'))
+        ->name('profile');
+});
 
 Route::prefix('identity')->name('identity.')->middleware(['web', 'auth'])->group(function (): void {
     Route::post('/workspaces', [WorkspaceController::class, 'store'])->name('workspaces.store');

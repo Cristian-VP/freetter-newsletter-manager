@@ -1,7 +1,7 @@
 ---
 name: Freetter Planner
 description: "Plan Freetter development work, architecture-safe implementation steps, module boundaries, risks, validations, and hand off approved plans to the implementer."
-model: GPT-5.3-Codex (copilot)
+model: Auto (copilot)
 tools: [read, search, todo, agent]
 agents: [Freetter Implementer]
 user-invocable: true

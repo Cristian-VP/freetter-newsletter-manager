@@ -8,14 +8,13 @@ import { cn } from "@/lib/utils";
 import { House, PencilLine, Plus, UsersRound } from "lucide-react";
 
 interface DesktopSideNavProps {
-  activeItem: HomeNavItemKey;
+  activeItem: HomeNavItemKey | null;
   isExpanded: boolean;
   isMenuOpen: boolean;
   onMouseEnter: React.MouseEventHandler<HTMLElement>;
   onMouseLeave: React.MouseEventHandler<HTMLElement>;
   onToggleMenu: () => void;
   onCreatePostClick: () => void;
-  onSelect: (item: HomeNavItemKey) => void;
   userName?: string;
   userAvatar?: string;
 }
@@ -28,7 +27,6 @@ export function DesktopSideNav({
   onMouseLeave,
   onToggleMenu,
   onCreatePostClick,
-  onSelect,
   userName,
   userAvatar,
 }: DesktopSideNavProps) {
@@ -56,7 +54,6 @@ export function DesktopSideNav({
                 label="Home"
                 isActive={activeItem === "home"}
                 href="/home"
-                onClick={() => onSelect("home")}
                 showLabel={isExpanded}
               />
 
@@ -64,7 +61,7 @@ export function DesktopSideNav({
                 icon={UsersRound}
                 label="Subscripciones"
                 isActive={activeItem === "subscriptions"}
-                onClick={() => onSelect("subscriptions")}
+                href="/subscriptions"
                 showLabel={isExpanded}
               />
 
@@ -72,7 +69,7 @@ export function DesktopSideNav({
                 icon={PencilLine}
                 label="Crear"
                 isActive={activeItem === "create"}
-                onClick={() => onSelect("create")}
+                href="/newsletters/resume"
                 showLabel={isExpanded}
               />
 
@@ -88,7 +85,7 @@ export function DesktopSideNav({
                 name={userName}
                 avatar={userAvatar}
                 isActive={activeItem === "profile"}
-                onClick={() => onSelect("profile")}
+                href="/profile"
                 showLabel={isExpanded}
               />
             </nav>
