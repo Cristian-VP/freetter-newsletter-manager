@@ -1,7 +1,7 @@
 ---
 name: Freetter Guardian
 description: "Review Freetter changes for regressions, missing tests, architecture drift, business rule violations, and hand off either back to implementation or to release management."
-model: GPT-4.1
+model: Auto (copilot)
 tools: [read, search, execute, todo, agent]
 agents: [Freetter Implementer, Freetter Release Manager, Freetter Planner]
 user-invocable: true

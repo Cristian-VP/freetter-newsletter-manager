@@ -1,8 +1,7 @@
 ---
 name: Freetter Implementer
 description: "Implement approved Freetter changes, edit the correct module, run focused validation, and hand off completed work to the guardian for review."
-model: GPT-5.3-Codex
-tools: [read, search, edit, execute, todo, agent]
+model: Auto (copilot)
 agents: [Freetter Guardian]
 user-invocable: true
 handoffs:
