@@ -60,11 +60,59 @@ class NewsletterIndexControllerTest extends TestCase
         $response->assertOk();
         $response->assertJsonCount(1, 'data.items');
         $response->assertJsonPath('data.items.0.title', 'Draft newsletter');
+        $response->assertJsonPath('data.items.0.workspace_slug', $workspace->slug);
+        $response->assertJsonPath('data.items.0.builder_url', route('newsletters.create', ['post' => $response->json('data.items.0.id')]));
         $response->assertJsonPath('data.filters.status', 'draft');
         $response->assertJsonPath('data.counts_by_status.all', 3);
         $response->assertJsonPath('data.counts_by_status.draft', 1);
         $response->assertJsonPath('data.counts_by_status.scheduled', 1);
         $response->assertJsonPath('data.counts_by_status.published', 1);
+
+        Carbon::setTestNow();
+    }
+
+    public function test_endpoint_can_filter_scheduled_and_published_newsletters(): void
+    {
+        Carbon::setTestNow('2026-04-26 10:00:00');
+
+        /** @var User $user */
+        $user = User::factory()->create();
+        $workspace = Workspace::factory()->create();
+
+        Membership::factory()
+            ->forUser($user)
+            ->forWorkspace($workspace)
+            ->writer()
+            ->create();
+
+        Post::factory()->newsletter()->scheduled()->create([
+            'workspace_id' => $workspace->id,
+            'author_id' => $user->id,
+            'title' => 'Scheduled newsletter',
+        ]);
+
+        Post::factory()->newsletter()->published()->create([
+            'workspace_id' => $workspace->id,
+            'author_id' => $user->id,
+            'title' => 'Published newsletter',
+        ]);
+
+        $scheduledResponse = $this->actingAs($user)->getJson('/publishing/newsletters?workspace_id='.$workspace->id.'&status=scheduled');
+
+        $scheduledResponse->assertOk();
+        $scheduledResponse->assertJsonCount(1, 'data.items');
+        $scheduledResponse->assertJsonPath('data.items.0.title', 'Scheduled newsletter');
+
+        $publishedResponse = $this->actingAs($user)->getJson('/publishing/newsletters?workspace_id='.$workspace->id.'&status=published');
+
+        $publishedResponse->assertOk();
+        $publishedResponse->assertJsonCount(1, 'data.items');
+        $publishedResponse->assertJsonPath('data.items.0.title', 'Published newsletter');
+
+        $allResponse = $this->actingAs($user)->getJson('/publishing/newsletters?workspace_id='.$workspace->id.'&status=all');
+
+        $allResponse->assertOk();
+        $allResponse->assertJsonCount(2, 'data.items');
 
         Carbon::setTestNow();
     }
