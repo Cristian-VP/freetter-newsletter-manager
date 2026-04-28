@@ -9,16 +9,25 @@ use Domains\Publishing\Models\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 class PostControllerTest extends TestCase
 {
     use RefreshDatabase;
 
+    private function createUser(): User
+    {
+        /** @var User $user */
+        $user = User::factory()->createOne();
+
+        return $user;
+    }
+
     public function test_can_create_post_draft_via_http(): void
     {
         $workspace = Workspace::factory()->create();
-        $author = User::factory()->create();
+        $author = $this->createUser();
 
         Membership::factory()
             ->forUser($author)
@@ -52,7 +61,7 @@ class PostControllerTest extends TestCase
     public function test_guest_cannot_create_post_draft_via_http(): void
     {
         $workspace = Workspace::factory()->create();
-        $author = User::factory()->create();
+        $author = $this->createUser();
 
         $response = $this->postJson('/publishing/workspaces/'.$workspace->id.'/posts', [
             'author_id' => $author->id,
@@ -72,7 +81,7 @@ class PostControllerTest extends TestCase
     public function test_can_publish_post_and_create_version_via_http(): void
     {
         $post = Post::factory()->draft()->create();
-        $publisher = User::factory()->create();
+        $publisher = $this->createUser();
 
         $response = $this->actingAs($publisher)->postJson('/publishing/posts/'.$post->id.'/publish', [
             'published_by_user_id' => $publisher->id,
@@ -105,7 +114,7 @@ class PostControllerTest extends TestCase
         Storage::fake('local');
 
         $workspace = Workspace::factory()->create();
-        $author = User::factory()->create();
+        $author = $this->createUser();
 
         Membership::factory()
             ->forUser($author)
@@ -163,7 +172,7 @@ class PostControllerTest extends TestCase
     public function test_cannot_create_note_with_more_than_eight_images(): void
     {
         $workspace = Workspace::factory()->create();
-        $author = User::factory()->create();
+        $author = $this->createUser();
 
         Membership::factory()
             ->forUser($author)
@@ -191,5 +200,25 @@ class PostControllerTest extends TestCase
 
         $response->assertSessionHasErrors(['media']);
         $this->assertDatabaseCount('publishing_posts', 0);
+    }
+
+    public function test_publish_endpoint_can_transition_to_preview_page_flow(): void
+    {
+        $this->withoutVite();
+
+        $post = Post::factory()->draft()->create();
+        $publisher = $this->createUser();
+
+        $publishResponse = $this->actingAs($publisher)->postJson('/publishing/posts/'.$post->id.'/publish', [
+            'published_by_user_id' => $publisher->id,
+        ]);
+
+        $publishResponse->assertOk();
+        $publishResponse->assertJsonPath('data.status', 'published');
+
+        $previewResponse = $this->actingAs($publisher)->get('/newsletters/preview');
+
+        $previewResponse->assertOk();
+        $previewResponse->assertInertia(fn (AssertableInertia $page) => $page->component('publishing::NewsletterPreview', false));
     }
 }

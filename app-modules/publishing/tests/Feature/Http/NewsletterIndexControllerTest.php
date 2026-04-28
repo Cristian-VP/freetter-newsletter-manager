@@ -10,6 +10,7 @@ use Domains\Identity\Models\Workspace;
 use Domains\Publishing\Models\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Inertia\Testing\AssertableInertia;
 use Tests\TestCase;
 
 class NewsletterIndexControllerTest extends TestCase
@@ -41,6 +42,7 @@ class NewsletterIndexControllerTest extends TestCase
             'workspace_id' => $workspace->id,
             'author_id' => $user->id,
             'title' => 'Draft newsletter',
+            'excerpt' => 'Resumen draft',
         ]);
 
         Post::factory()->newsletter()->scheduled()->create([
@@ -62,6 +64,7 @@ class NewsletterIndexControllerTest extends TestCase
         $response->assertJsonPath('data.items.0.title', 'Draft newsletter');
         $response->assertJsonPath('data.items.0.workspace_slug', $workspace->slug);
         $response->assertJsonPath('data.items.0.builder_url', route('newsletters.create', ['post' => $response->json('data.items.0.id')]));
+        $response->assertJsonPath('data.items.0.preview_text', 'Resumen draft');
         $response->assertJsonPath('data.filters.status', 'draft');
         $response->assertJsonPath('data.counts_by_status.all', 3);
         $response->assertJsonPath('data.counts_by_status.draft', 1);
@@ -152,6 +155,7 @@ class NewsletterIndexControllerTest extends TestCase
         $response->assertJsonPath('data.meta.total', 3);
         $response->assertJsonPath('data.meta.last_page', 2);
         $response->assertJsonPath('data.counts_by_status.all', 3);
+        $response->assertJsonPath('data.items.0.preview_text', 'Contenido editorial');
     }
 
     public function test_endpoint_returns_forbidden_when_workspace_is_not_accessible(): void
@@ -190,5 +194,27 @@ class NewsletterIndexControllerTest extends TestCase
 
         $response->assertUnprocessable();
         $response->assertJsonValidationErrors(['status', 'per_page', 'page']);
+    }
+
+    public function test_newsletters_preview_page_requires_authentication(): void
+    {
+        $this->withoutVite();
+
+        $response = $this->get('/newsletters/preview');
+
+        $response->assertRedirect(route('login'));
+    }
+
+    public function test_newsletters_preview_page_renders_inertia_component(): void
+    {
+        $this->withoutVite();
+
+        /** @var User $user */
+        $user = User::factory()->create();
+
+        $response = $this->actingAs($user)->get('/newsletters/preview');
+
+        $response->assertOk();
+        $response->assertInertia(fn (AssertableInertia $page) => $page->component('publishing::NewsletterPreview', false));
     }
 }

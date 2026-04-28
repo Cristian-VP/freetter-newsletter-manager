@@ -16,6 +16,9 @@ Route::middleware(['web', 'auth'])->group(function (): void {
 
     Route::get('/newsletters/create', static fn () => Inertia::render('publishing::NewsletterCreate'))
         ->name('newsletters.create');
+
+    Route::get('/newsletters/preview', static fn () => Inertia::render('publishing::NewsletterPreview'))
+        ->name('newsletters.preview');
 });
 
 Route::prefix('publishing')->name('publishing.')->middleware(['web', 'auth'])->group(function (): void {

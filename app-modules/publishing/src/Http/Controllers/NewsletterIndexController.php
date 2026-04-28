@@ -96,6 +96,8 @@ class NewsletterIndexController extends Controller
                     'title' => $post->title,
                     'status' => $post->status,
                     'excerpt' => $post->excerpt,
+                    'preview_text' => $post->getExcerpt(240),
+                    'created_at' => $post->created_at?->toIso8601String(),
                     'published_at' => $post->published_at?->toIso8601String(),
                     'updated_at' => $post->updated_at?->toIso8601String(),
                     'builder_url' => route('newsletters.create', ['post' => $post->id]),

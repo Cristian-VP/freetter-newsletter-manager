@@ -6,35 +6,6 @@
 
 Este documento describe el estado real del repositorio hoy: avance funcional, brechas tecnicas y prioridades inmediatas.
 
-## 0.8. Actualización Incremental Publishing Índice Editorial Backend (26-04-2026)
-
-- fecha: 26 de abril de 2026
-- qué cambió realmente en código:
-    - Se implementó el contrato backend del índice editorial en `publishing` para listar newsletters por estado con filtros y paginación.
-    - Se agregó endpoint autenticado `GET /publishing/newsletters` en rutas del módulo `publishing`.
-    - Se agregó `IndexNewslettersRequest` para validar query params (`workspace_id`, `status`, `q`, `page`, `per_page`).
-    - Se agregó `NewsletterIndexController` con:
-        - filtro de acceso por membresía a workspaces del usuario autenticado,
-        - respuesta con `items`, `filters`, `meta` y `counts_by_status`,
-        - filtros por estado (`draft`, `scheduled`, `published`, `all`),
-        - búsqueda por texto y paginación acotada (máximo 30 por página),
-        - URLs de continuidad para abrir flujo de builder por item.
-    - Se agregó test feature dedicado `NewsletterIndexControllerTest` cubriendo:
-        - acceso guest (401),
-        - autorización por workspace (403),
-        - validación de query params (422),
-        - filtros por estado,
-        - búsqueda y paginación.
-- validación ejecutada:
-    - `vendor/bin/pint --dirty --format agent` -> pass
-    - `php artisan test --compact app-modules/publishing/tests/Feature/Http/NewsletterIndexControllerTest.php` -> 5 pasaron (22 assertions)
-- qué riesgos se cerraron:
-    - Se cerró el gap backend para la pantalla editorial `/newsletters/resume` al contar con un contrato JSON explícito y versionable.
-    - Se cerró el riesgo de fuga de datos cross-workspace al restringir resultados por membresía del usuario autenticado.
-    - Se cerró el riesgo de ambigüedad funcional entre estados editoriales al formalizar `draft`, `scheduled`, `published` y `all` en el contrato.
-- qué riesgos nuevos aparecieron:
-    - No se detectan riesgos críticos nuevos en backend para este alcance.
-    - Riesgo residual no bloqueante: falta consumo frontend del contrato en `NewsletterResume` (fuera de alcance de esta implementación).
 
 ## 0. Actualización Incremental (25-03-2026)
 
@@ -311,6 +282,70 @@ Este documento describe el estado real del repositorio hoy: avance funcional, br
 - qué riesgos nuevos aparecieron:
     - No se detectan riesgos críticos nuevos en el alcance validado.
     - Riesgo residual no bloqueante: faltan pruebas E2E/UI automáticas para cubrir selección de texto + linking + carrusel en breakpoints.
+
+## 0.8.1. Actualización Incremental Publishing Pantalla Crear Newsletter por Estado (27-04-2026)
+
+- fecha: 27 de abril de 2026
+- qué cambió realmente en código:
+    - Se implementó la pantalla editorial `GET /newsletters/resume` en Inertia React para `publishing` reemplazando el placeholder previo.
+    - La vista ahora incluye cabecera con pestañas de estado (`todos`, `borrador`, `programados`, `enviados`) con cambio de contenido en la misma página (sin navegación) y estado activo con borde inferior.
+    - Se añadió comportamiento responsive en cabecera para mobile con scroll horizontal de pestañas.
+    - Se implementaron contadores visuales en cabecera únicamente para `borrador` y `programados`, visibles solo cuando el conteo es mayor a cero.
+    - Se implementaron estados de `loading`, `error` y `vacío` en la vista editorial, reutilizando patrón visual de la pantalla de subscripciones.
+    - Se implementó listado por filas con ancho de contenedor alineado a subscripciones (`max-w-190` / `md:max-w-205`), mostrando fecha de creación, título, preview truncado y menú de acciones por fila.
+    - Se integró CTA persistente `Nueva newsletter` al final de la sección en cualquier pestaña, con comportamiento responsive (fila completa en mobile y ancho reducido/alineado a la derecha en desktop/tablet).
+    - Se integró acceso al builder al pulsar una fila usando `builder_url` del contrato backend.
+    - Se implementó acción mínima `Publicar ahora` desde el menú de tres puntos de cada fila usando endpoint existente `POST /publishing/posts/{post}/publish`.
+    - Se agregó nueva ruta autenticada `GET /newsletters/preview` y página placeholder Inertia `publishing::NewsletterPreview` para continuidad de flujo post-publicación.
+    - Se amplió el payload del índice editorial para incluir `preview_text` y `created_at` por item.
+- archivos principales impactados:
+    - `app-modules/publishing/resources/js/pages/NewsletterResume.tsx`
+    - `app-modules/publishing/resources/js/pages/NewsletterPreview.tsx`
+    - `app-modules/publishing/routes/web.php`
+    - `app-modules/publishing/src/Http/Controllers/NewsletterIndexController.php`
+    - `app-modules/publishing/tests/Feature/Http/NewsletterIndexControllerTest.php`
+    - `app-modules/publishing/tests/Feature/Http/PostControllerTest.php`
+- validación ejecutada:
+    - `vendor/bin/pint --dirty --format agent` -> pass
+    - `php artisan test --compact app-modules/publishing/tests/Feature/Http/NewsletterIndexControllerTest.php app-modules/publishing/tests/Feature/Http/PostControllerTest.php` -> 14 pasaron (75 assertions)
+    - Diagnóstico de editor en archivos modificados (`NewsletterResume.tsx`, `NewsletterPreview.tsx`, `NewsletterIndexController.php`) -> sin errores
+- qué riesgos se cerraron:
+    - Se cerró el gap funcional de FRT-31 para disponer de una pantalla editorial usable por estado en `/newsletters/resume`.
+    - Se cerró el riesgo UX de falta de continuidad en flujo de publicación al incorporar `/newsletters/preview` como destino explícito tras `Publicar ahora`.
+    - Se cerró el riesgo de inconsistencia visual con subscripciones al alinear ancho y patrón de filas.
+- qué riesgos nuevos aparecieron:
+    - Riesgo residual no bloqueante: la semántica `status=all` del endpoint backend sigue representando todos los estados, y la exclusión de `enviados` en la pestaña `todos` se aplica actualmente en frontend de `NewsletterResume`.
+    - Riesgo residual no bloqueante: el builder de newsletter permanece en estado placeholder, por lo que la hidratación completa del JSON de una newsletter existente depende del siguiente incremento de builder.
+
+## 0.8. Actualización Incremental Publishing Índice Editorial Backend (26-04-2026)
+
+- fecha: 26 de abril de 2026
+- qué cambió realmente en código:
+    - Se implementó el contrato backend del índice editorial en `publishing` para listar newsletters por estado con filtros y paginación.
+    - Se agregó endpoint autenticado `GET /publishing/newsletters` en rutas del módulo `publishing`.
+    - Se agregó `IndexNewslettersRequest` para validar query params (`workspace_id`, `status`, `q`, `page`, `per_page`).
+    - Se agregó `NewsletterIndexController` con:
+        - filtro de acceso por membresía a workspaces del usuario autenticado,
+        - respuesta con `items`, `filters`, `meta` y `counts_by_status`,
+        - filtros por estado (`draft`, `scheduled`, `published`, `all`),
+        - búsqueda por texto y paginación acotada (máximo 30 por página),
+        - URLs de continuidad para abrir flujo de builder por item.
+    - Se agregó test feature dedicado `NewsletterIndexControllerTest` cubriendo:
+        - acceso guest (401),
+        - autorización por workspace (403),
+        - validación de query params (422),
+        - filtros por estado,
+        - búsqueda y paginación.
+- validación ejecutada:
+    - `vendor/bin/pint --dirty --format agent` -> pass
+    - `php artisan test --compact app-modules/publishing/tests/Feature/Http/NewsletterIndexControllerTest.php` -> 5 pasaron (22 assertions)
+- qué riesgos se cerraron:
+    - Se cerró el gap backend para la pantalla editorial `/newsletters/resume` al contar con un contrato JSON explícito y versionable.
+    - Se cerró el riesgo de fuga de datos cross-workspace al restringir resultados por membresía del usuario autenticado.
+    - Se cerró el riesgo de ambigüedad funcional entre estados editoriales al formalizar `draft`, `scheduled`, `published` y `all` en el contrato.
+- qué riesgos nuevos aparecieron:
+    - No se detectan riesgos críticos nuevos en backend para este alcance.
+    - Riesgo residual no bloqueante: falta consumo frontend del contrato en `NewsletterResume` (fuera de alcance de esta implementación).
 
 ## 1. Resumen Ejecutivo
 
