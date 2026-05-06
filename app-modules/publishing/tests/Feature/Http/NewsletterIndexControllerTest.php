@@ -63,7 +63,7 @@ class NewsletterIndexControllerTest extends TestCase
         $response->assertJsonCount(1, 'data.items');
         $response->assertJsonPath('data.items.0.title', 'Draft newsletter');
         $response->assertJsonPath('data.items.0.workspace_slug', $workspace->slug);
-        $response->assertJsonPath('data.items.0.builder_url', route('newsletters.create', ['post' => $response->json('data.items.0.id')]));
+        $response->assertJsonPath('data.items.0.builder_url', route('newsletters.publishing', ['post' => $response->json('data.items.0.id')]));
         $response->assertJsonPath('data.items.0.preview_text', 'Resumen draft');
         $response->assertJsonPath('data.filters.status', 'draft');
         $response->assertJsonPath('data.counts_by_status.all', 3);

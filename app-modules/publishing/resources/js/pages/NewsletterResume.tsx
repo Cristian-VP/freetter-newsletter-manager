@@ -1,7 +1,7 @@
 import AuthenticatedHomeLayout from "@/layouts/authenticated-home-layout";
 import { type PageProps } from "@/types";
 import { Head, Link, router, usePage } from "@inertiajs/react";
-import { Ellipsis, LoaderCircle } from "lucide-react";
+import { Ellipsis } from "lucide-react";
 import { type CSSProperties, useCallback, useEffect, useMemo, useState } from "react";
 
 type NewsletterStatus = "draft" | "scheduled" | "published";
@@ -38,9 +38,14 @@ export default function NewsletterResume() {
   const [items, setItems] = useState<NewsletterItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [snackbar, setSnackbar] = useState<{ show: boolean; message: string; durationMs: number; canGoTop: boolean }>({
+    show: false,
+    message: "",
+    durationMs: 1400,
+    canGoTop: false,
+  });
   const [selectedTab, setSelectedTab] = useState<TabKey>("todos");
   const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
-  const [publishingId, setPublishingId] = useState<string | null>(null);
 
   const loadNewsletters = useCallback(async (): Promise<void> => {
     setIsLoading(true);
@@ -82,6 +87,51 @@ export default function NewsletterResume() {
     };
   }, []);
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const snackbarCode = params.get("snackbar");
+
+    if (snackbarCode === "newsletter-cancelada") {
+      setSnackbar({
+        show: true,
+        message: "Newsletter cancelada",
+        durationMs: 1800,
+        canGoTop: false,
+      });
+
+      params.delete("snackbar");
+      const nextSearch = params.toString();
+      const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}${window.location.hash}`;
+      window.history.replaceState({}, "", nextUrl);
+    } else if (snackbarCode === "newsletter-publicada" || snackbarCode === "newsletter-programada") {
+      setSnackbar({
+        show: true,
+        message: snackbarCode === "newsletter-publicada" ? "Newsletter publicada" : "Newsletter programada",
+        durationMs: 1800,
+        canGoTop: false,
+      });
+
+      params.delete("snackbar");
+      const nextSearch = params.toString();
+      const nextUrl = `${window.location.pathname}${nextSearch ? `?${nextSearch}` : ""}${window.location.hash}`;
+      window.history.replaceState({}, "", nextUrl);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!snackbar.show) {
+      return;
+    }
+
+    const timeout = window.setTimeout(() => {
+      setSnackbar((current) => ({ ...current, show: false }));
+    }, snackbar.durationMs);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [snackbar.durationMs, snackbar.show]);
+
   const filteredItems = useMemo(() => {
     if (selectedTab === "todos") {
       return items.filter((item) => item.status !== "published");
@@ -101,40 +151,6 @@ export default function NewsletterResume() {
   const draftCount = useMemo(() => items.filter((item) => item.status === "draft").length, [items]);
   const scheduledCount = useMemo(() => items.filter((item) => item.status === "scheduled").length, [items]);
 
-  const publishNow = async (postId: string): Promise<void> => {
-    if (publishingId !== null) {
-      return;
-    }
-
-    setPublishingId(postId);
-    setActiveMenuId(null);
-
-    try {
-      const response = await fetch(`/publishing/posts/${postId}/publish`, {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          "X-Requested-With": "XMLHttpRequest",
-          "X-CSRF-TOKEN": readCsrfToken(),
-        },
-        credentials: "same-origin",
-        body: JSON.stringify({
-          published_by_user_id: String(auth.user?.id ?? ""),
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("No pudimos publicar esta newsletter ahora.");
-      }
-
-      router.visit("/newsletters/preview");
-    } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "No pudimos publicar esta newsletter ahora.");
-    } finally {
-      setPublishingId(null);
-    }
-  };
 
   return (
     <AuthenticatedHomeLayout>
@@ -198,7 +214,7 @@ export default function NewsletterResume() {
                 >
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex min-w-0 items-center gap-3">
-                      <span className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Newsletter</span>
+                      {/* <span className="text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">Newsletter</span> */}
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -229,18 +245,10 @@ export default function NewsletterResume() {
                           >
                             <button
                               type="button"
-                              onClick={() => void publishNow(item.id)}
-                              disabled={item.status === "published" || publishingId === item.id}
-                              className="flex w-full items-center justify-start rounded-lg px-3 py-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-50"
+                              onClick={() => router.visit(item.builder_url)}
+                              className="flex w-full items-center justify-start rounded-lg px-3 py-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-100"
                             >
-                              {publishingId === item.id ? (
-                                <span className="inline-flex items-center gap-2">
-                                  <LoaderCircle className="h-4 w-4 animate-spin" />
-                                  Publicando...
-                                </span>
-                              ) : (
-                                "Publicar ahora"
-                              )}
+                              Publicar
                             </button>
                           </div>
                         ) : null}
@@ -286,12 +294,28 @@ export default function NewsletterResume() {
                     {initialsFromName(auth.user?.name ?? null)}
                   </span>
                 )}
-                <span>Nueva newsletter</span>
+                <span>Nueva publicación</span>
               </Link>
             </div>
           </div>
         ) : null}
       </section>
+
+      {snackbar.show ? (
+        <button
+          type="button"
+          onClick={() => {
+            if (snackbar.canGoTop) {
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }
+
+            setSnackbar((current) => ({ ...current, show: false }));
+          }}
+          className="fixed bottom-20 left-1/2 z-90 inline-flex -translate-x-1/2 items-center gap-2 rounded-full bg-zinc-900 px-4 py-2 text-sm text-white shadow-[0_10px_22px_rgba(0,0,0,0.25)]"
+        >
+          {snackbar.message}
+        </button>
+      ) : null}
     </AuthenticatedHomeLayout>
   );
 }

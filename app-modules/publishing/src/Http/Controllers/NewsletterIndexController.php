@@ -100,7 +100,7 @@ class NewsletterIndexController extends Controller
                     'created_at' => $post->created_at?->toIso8601String(),
                     'published_at' => $post->published_at?->toIso8601String(),
                     'updated_at' => $post->updated_at?->toIso8601String(),
-                    'builder_url' => route('newsletters.create', ['post' => $post->id]),
+                    'builder_url' => route('newsletters.publishing', ['post' => $post->id]),
                 ];
             })
             ->values()
