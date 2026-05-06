@@ -347,6 +347,37 @@ Este documento describe el estado real del repositorio hoy: avance funcional, br
     - No se detectan riesgos críticos nuevos en backend para este alcance.
     - Riesgo residual no bloqueante: falta consumo frontend del contrato en `NewsletterResume` (fuera de alcance de esta implementación).
 
+## 0.9. Actualización Incremental (06-05-2026)
+
+- fecha: 6 de mayo de 2026
+- qué cambió realmente en código:
+    - Se añadió la pantalla dedicada de publicación de newsletters `GET /newsletters/publishing` (Inertia page `publishing::NewsletterPublishing`) y se conectó como punto de publicación desde el resumen y el editor.
+    - La UI de publicación ahora soporta: selección de audiencia (`all` / `subscribers`), selección de canales de entrega (`web`, `email`), y programación opcional mediante un toggle `Activar programación` + campo `datetime-local` (antes el campo venía prellenado de forma obligatoria).
+    - El endpoint de publicación (`POST /publishing/posts/{post}/publish`) ahora normaliza y recibe `audience` y `delivery_channels` en el `context` del evento `PostPublished` para que listeners consuman la intención de entrega.
+    - En el módulo `delivery` el listener `CreateDeliveryCampaignOnPublish` fue ajustado para crear campaña SOLO cuando el contexto incluye `email` como canal, permitiendo publicar en web sin crear campañas de envío.
+    - El job de envío `SendCampaignJob` fue adaptado para usar notificaciones on-demand vía el mailer de Laravel (configurable por `MAIL_MAILER`, en producción `resend`) usando `Notification::route('mail', $subscriber->email)->notify(new NewsletterPublishedNotification($post))` en lugar de un envío simulado.
+    - Se añadió la notificación `NewsletterPublishedNotification` que compone el email (subject, cuerpo mínimo) y se envía vía `mail` (respecta configuración `MAIL_MAILER` del entorno).
+    - Se implementó la UI-UX de validación para programación: el botón `Programar` queda deshabilitado hasta activar la opción de programación y elegir una fecha/hora; además el campo se muestra visualmente desactivado cuando la programación no está activa.
+    - Se agregaron/actualizaron tests focales del flujo de publicación y del job de envío para cubrir web-only, publish + email y el nuevo screen; pruebas de integración seleccionadas pasaron localmente.
+
+- validación ejecutada:
+    - `vendor/bin/pint --dirty --format agent` → pasó (format applied to changed PHP files).
+    - Tests focales ejecutados:
+        - `php artisan test --compact app-modules/publishing/tests/Feature/Http/NewsletterPublishingPageTest.php` → 1 passed (19 assertions)
+        - Suite focal (resume/publish/send job) → 19 passed (116 assertions) en ejecución dirigida durante la implementación.
+
+- qué riesgos se cerraron:
+    - Se elimina el riesgo de publicar únicamente vía UI inline sin flujo dedicado; ahora existe una pantalla de publicación con opciones claras y validación.
+    - Se elimina el riesgo de crear campañas de email innecesarias cuando la publicación es solo web (listener guardará contra creación de campaña si `email` no está seleccionado).
+    - Se reduce el riesgo de envío accidental a producción al usar la configuración de `MAIL_MAILER` centralizada (env) y pruebas aisladas en `MAIL_MAILER=array` en CI/tests.
+
+- qué riesgos nuevos aparecieron:
+    - La opción de `Programar` ahora persiste el estado `scheduled` y la fecha, pero aún falta implementar el runner/worker (cron/command/queue) que ejecute las publicaciones programadas a la hora indicada — esto queda como siguiente paso.
+
+- notas operativas:
+    - En entornos de desarrollo los env vars (`MAIL_MAILER=array` o `log`) mantienen el envío local; en producción `MAIL_MAILER=resend` permite usar Resend como en otros flujos (magic link).
+    - Pequeña corrección visual: se cambió una clase Tailwind `rounded-[32px]` por `rounded-4xl` para pasar linting.
+
 ## 1. Resumen Ejecutivo
 
 Freetter tiene dirección de producto y arquitectura bien definida en `.context`, pero la implementación está incompleta y heterogénea entre módulos.
