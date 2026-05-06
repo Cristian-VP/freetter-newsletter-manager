@@ -17,6 +17,12 @@ class CreateDeliveryCampaignOnPublish
             return;
         }
 
+        $deliveryChannels = $event->context['delivery_channels'] ?? ['web', 'email'];
+
+        if (! is_array($deliveryChannels) || ! in_array('email', $deliveryChannels, true)) {
+            return;
+        }
+
         DB::transaction(function () use ($event): void {
             $campaign = Campaign::query()->firstOrCreate(
                 [
@@ -48,7 +54,7 @@ class CreateDeliveryCampaignOnPublish
                 subscriberCount: $subscriberCount,
             ));
 
-            SendCampaignJob::dispatch($campaign->id);
+            SendCampaignJob::dispatchSync($campaign->id);
         });
     }
 }

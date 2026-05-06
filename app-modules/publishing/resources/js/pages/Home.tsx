@@ -39,6 +39,8 @@ type FeedPost = {
         quote?: string;
         style?: string;
         items?: string[];
+        src?: string;
+        alt?: string;
       };
     }>;
     plain_text: string;
@@ -171,6 +173,25 @@ function renderPostBlocks(blocks: FeedPost["content"]["blocks"]): ReactNode {
         <blockquote key={`quote-${index}`} className="border-l-3 border-zinc-300 pl-3 text-zinc-700">
           <span dangerouslySetInnerHTML={{ __html: sanitizeRichHtml(html) }} />
         </blockquote>
+      );
+    }
+
+    if (blockType === "image") {
+      const src = block.data?.src?.trim() || "";
+      if (src === "") {
+        return null;
+      }
+
+      return (
+        <div key={`image-${index}`} className="overflow-hidden rounded-2xl border border-zinc-200 bg-[#F7F4ED]">
+          <img
+            src={src}
+            alt={block.data?.alt?.trim() || "Imagen de la newsletter"}
+            className="block h-auto w-full"
+            loading="lazy"
+            decoding="async"
+          />
+        </div>
       );
     }
 

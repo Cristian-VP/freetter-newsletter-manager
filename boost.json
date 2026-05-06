@@ -8,6 +8,8 @@
     "nightwatch_mcp": false,
     "sail": false,
     "skills": [
+        "ai-sdk-development",
+        "laravel-best-practices",
         "inertia-react-development",
         "tailwindcss-development"
     ]
