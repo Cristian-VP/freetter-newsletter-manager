@@ -6,12 +6,14 @@ use Domains\Audience\Models\Subscriber;
 use Domains\Delivery\Events\CampaignCompleted;
 use Domains\Delivery\Events\CampaignSendingStarted;
 use Domains\Delivery\Models\Campaign;
+use Domains\Delivery\Notifications\NewsletterPublishedNotification;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Notification;
 use Throwable;
 
 class SendCampaignJob implements ShouldQueue
@@ -32,7 +34,7 @@ class SendCampaignJob implements ShouldQueue
 
     public function handle(): void
     {
-        $campaign = Campaign::query()->find($this->campaignId);
+        $campaign = Campaign::query()->with(['post.workspace'])->find($this->campaignId);
 
         if (! $campaign || $campaign->status !== 'queued') {
             return;
@@ -86,16 +88,32 @@ class SendCampaignJob implements ShouldQueue
     {
         $shouldFail = str_contains($subscriber->email, 'fail+');
 
+        if ($shouldFail) {
+            Log::info('delivery.campaign.send_attempt', [
+                'campaign_id' => $campaign->id,
+                'workspace_id' => $campaign->workspace_id,
+                'post_id' => $campaign->post_id,
+                'subscriber_id' => $subscriber->id,
+                'email' => $subscriber->email,
+                'provider' => 'resend',
+                'result' => 'failed',
+            ]);
+
+            return false;
+        }
+
+        Notification::route('mail', $subscriber->email)->notify(new NewsletterPublishedNotification($campaign->post));
+
         Log::info('delivery.campaign.send_attempt', [
             'campaign_id' => $campaign->id,
             'workspace_id' => $campaign->workspace_id,
             'post_id' => $campaign->post_id,
             'subscriber_id' => $subscriber->id,
             'email' => $subscriber->email,
-            'provider' => 'mock',
-            'result' => $shouldFail ? 'failed' : 'sent',
+            'provider' => 'resend',
+            'result' => 'sent',
         ]);
 
-        return ! $shouldFail;
+        return true;
     }
 }

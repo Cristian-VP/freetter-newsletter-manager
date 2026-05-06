@@ -4,13 +4,15 @@ namespace Domains\Delivery\Tests\Feature;
 
 use Domains\Delivery\Jobs\SendCampaignJob;
 use Domains\Delivery\Models\Campaign;
+use Domains\Delivery\Notifications\NewsletterPublishedNotification;
 use Domains\Identity\Models\Membership;
 use Domains\Identity\Models\User;
 use Domains\Identity\Models\Workspace;
 use Domains\Publishing\Events\PostPublished;
 use Domains\Publishing\Models\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class DeliveryCampaignTest extends TestCase
@@ -19,7 +21,8 @@ class DeliveryCampaignTest extends TestCase
 
     public function test_creates_queued_campaign_when_newsletter_is_published(): void
     {
-        Queue::fake();
+        Event::fake([\Domains\Delivery\Events\CampaignSendingStarted::class, \Domains\Delivery\Events\CampaignCompleted::class]);
+        Notification::fake();
 
         $workspace = Workspace::factory()->create();
         $author = User::factory()->create();
@@ -28,15 +31,26 @@ class DeliveryCampaignTest extends TestCase
             'author_id' => $author->id,
         ]);
 
+        $subscriber = \Domains\Audience\Models\Subscriber::factory()->active()->create([
+            'workspace_id' => $workspace->id,
+            'email' => 'reader@example.com',
+        ]);
+
         event(new PostPublished($post));
 
         $this->assertDatabaseHas('delivery_campaigns', [
             'workspace_id' => $workspace->id,
             'post_id' => $post->id,
-            'status' => 'queued',
+            'status' => 'sent',
         ]);
 
-        Queue::assertPushed(SendCampaignJob::class);
+        Notification::assertSentOnDemandTimes(NewsletterPublishedNotification::class, 1);
+        Notification::assertSentOnDemand(NewsletterPublishedNotification::class, function (NewsletterPublishedNotification $notification, array $channels, object $notifiable) use ($subscriber): bool {
+            return $channels === ['mail'] && ($notifiable->routes['mail'] ?? null) === $subscriber->email;
+        });
+
+        Event::assertDispatched(\Domains\Delivery\Events\CampaignSendingStarted::class);
+        Event::assertDispatched(\Domains\Delivery\Events\CampaignCompleted::class);
     }
 
     public function test_lists_workspace_campaigns(): void

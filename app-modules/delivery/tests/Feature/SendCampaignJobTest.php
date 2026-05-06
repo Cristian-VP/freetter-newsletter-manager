@@ -7,11 +7,13 @@ use Domains\Delivery\Events\CampaignCompleted;
 use Domains\Delivery\Events\CampaignSendingStarted;
 use Domains\Delivery\Jobs\SendCampaignJob;
 use Domains\Delivery\Models\Campaign;
+use Domains\Delivery\Notifications\NewsletterPublishedNotification;
 use Domains\Identity\Models\User;
 use Domains\Identity\Models\Workspace;
 use Domains\Publishing\Models\Post;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
+use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 
 class SendCampaignJobTest extends TestCase
@@ -21,6 +23,7 @@ class SendCampaignJobTest extends TestCase
     public function test_job_sends_to_active_subscribers_updates_stats_and_dispatches_events(): void
     {
         Event::fake([CampaignSendingStarted::class, CampaignCompleted::class]);
+        Notification::fake();
 
         $workspace = Workspace::factory()->create();
         $author = User::factory()->create();
@@ -64,6 +67,11 @@ class SendCampaignJobTest extends TestCase
         $this->assertSame(2, $campaign->stats['total']);
         $this->assertSame(1, $campaign->stats['sent']);
         $this->assertSame(1, $campaign->stats['failed']);
+
+        Notification::assertSentOnDemandTimes(NewsletterPublishedNotification::class, 1);
+        Notification::assertSentOnDemand(NewsletterPublishedNotification::class, function (NewsletterPublishedNotification $notification, array $channels, object $notifiable): bool {
+            return $channels === ['mail'] && ($notifiable->routes['mail'] ?? null) === 'ok@example.com';
+        });
 
         Event::assertDispatched(CampaignSendingStarted::class);
         Event::assertDispatched(CampaignCompleted::class);
