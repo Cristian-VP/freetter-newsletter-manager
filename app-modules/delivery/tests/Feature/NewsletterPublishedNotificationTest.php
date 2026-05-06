@@ -13,8 +13,11 @@ class NewsletterPublishedNotificationTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_notification_renders_the_newsletter_body_and_uses_the_author_as_sender(): void
+    public function test_notification_renders_the_newsletter_body_and_uses_the_configured_sender(): void
     {
+        config()->set('mail.from.address', 'no-reply@freetter.app');
+        config()->set('mail.from.name', 'Freetter');
+
         $workspace = Workspace::factory()->create([
             'name' => 'Cris Studio',
         ]);
@@ -65,7 +68,8 @@ class NewsletterPublishedNotificationTest extends TestCase
         $notification = new NewsletterPublishedNotification($post);
         $mailMessage = $notification->toMail($author);
 
-        $this->assertSame(['cris@freetter.app', 'Cris'], $mailMessage->from);
+        $this->assertSame(['no-reply@freetter.app', 'Freetter'], $mailMessage->from);
+        $this->assertSame([['cris@freetter.app', 'Cris']], $mailMessage->replyTo);
         $this->assertSame('emails.newsletter-published', $mailMessage->view);
         $this->assertSame('Cris Studio', $mailMessage->viewData['workspaceName']);
         $this->assertSame('Cris', $mailMessage->viewData['authorName']);

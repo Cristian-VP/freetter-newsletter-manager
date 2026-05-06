@@ -102,7 +102,22 @@ class SendCampaignJob implements ShouldQueue
             return false;
         }
 
-        Notification::route('mail', $subscriber->email)->notify(new NewsletterPublishedNotification($campaign->post));
+        try {
+            Notification::route('mail', $subscriber->email)->notify(new NewsletterPublishedNotification($campaign->post));
+        } catch (Throwable $exception) {
+            Log::warning('delivery.campaign.send_attempt', [
+                'campaign_id' => $campaign->id,
+                'workspace_id' => $campaign->workspace_id,
+                'post_id' => $campaign->post_id,
+                'subscriber_id' => $subscriber->id,
+                'email' => $subscriber->email,
+                'provider' => 'resend',
+                'result' => 'failed',
+                'error' => $exception->getMessage(),
+            ]);
+
+            return false;
+        }
 
         Log::info('delivery.campaign.send_attempt', [
             'campaign_id' => $campaign->id,
