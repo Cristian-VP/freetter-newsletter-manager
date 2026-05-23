@@ -2,12 +2,14 @@
 
 namespace Domains\Identity\Tests\Feature\Models;
 
-use Domains\Identity\Models\Workspace;
-use Domains\Identity\Models\User;
+use Domains\Identity\Models\Invitation;
 use Domains\Identity\Models\Membership;
+use Domains\Identity\Models\User;
+use Domains\Identity\Models\Workspace;
 use Illuminate\Database\Eloquent\Model;
-use Tests\TestCase;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class WorkspaceTest extends TestCase
 {
@@ -39,7 +41,7 @@ class WorkspaceTest extends TestCase
             'slug' => 'unique-slug',
         ]);
 
-        $this->expectException(\Illuminate\Database\UniqueConstraintViolationException::class);
+        $this->expectException(UniqueConstraintViolationException::class);
 
         Workspace::factory()->create([
             'slug' => 'unique-slug',
@@ -184,7 +186,7 @@ class WorkspaceTest extends TestCase
     {
         $workspace = Workspace::factory()->create();
 
-        \Domains\Identity\Models\Invitation::factory()
+        Invitation::factory()
             ->count(5)
             ->create([
                 'workspace_id' => $workspace->id,
@@ -215,5 +217,17 @@ class WorkspaceTest extends TestCase
         $this->assertDatabaseMissing('identity_memberships', [
             'workspace_id' => $workspace->id,
         ]);
+    }
+
+    /**
+     * Test: Accessor sending_email returns {slug}@freetter.app
+     */
+    public function test_sending_email_accessor_returns_slug_at_domain(): void
+    {
+        $workspace = Workspace::factory()->create([
+            'slug' => 'test-slug',
+        ]);
+
+        $this->assertEquals('test-slug@freetter.app', $workspace->sending_email);
     }
 }

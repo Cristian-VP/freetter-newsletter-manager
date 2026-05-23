@@ -2,6 +2,7 @@
 
 namespace Domains\Community\Http\Controllers;
 
+use Domains\Community\Events\UserSubscribedToWorkspace;
 use Domains\Community\Events\WorkspaceFollowed;
 use Domains\Community\Events\WorkspaceUnfollowed;
 use Domains\Community\Http\Requests\StoreFollowRequest;
@@ -37,6 +38,15 @@ class FollowController extends Controller
 
         event(new WorkspaceFollowed(
             follower: $follow,
+            context: [
+                'source' => 'community.http',
+            ],
+        ));
+
+        // Also notify Audience that the follower has effectively subscribed
+        event(new UserSubscribedToWorkspace(
+            workspaceId: $workspaceId,
+            userId: $user->id,
             context: [
                 'source' => 'community.http',
             ],
