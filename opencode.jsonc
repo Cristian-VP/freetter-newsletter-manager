@@ -24,6 +24,27 @@
         "boost:mcp"
       ],
       "enabled": true
+    },
+    "supabase": {
+      "type": "remote",
+      "url": "https://mcp.supabase.com/mcp",
+      "enabled": true
+    },
+    "digitalocean": {
+      "type": "local",
+      "command": ["npx", "-y", "@digitalocean/mcp"],
+      "enabled": true,
+      "environment": {
+        "DIGITALOCEAN_API_TOKEN": "${env:DIGITALOCEAN_API_KEY}"
+      }
+    },
+    "resend": {
+      "type": "local",
+      "command": ["npx", "-y", "resend-mcp"],
+      "enabled": true,
+      "environment": {
+        "RESEND_API_KEY": "${env:RESEND_API_KEY}"
+      }
     }
   }
 }
