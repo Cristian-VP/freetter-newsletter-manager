@@ -7,6 +7,7 @@ use Domains\Delivery\Events\CampaignCompleted;
 use Domains\Delivery\Events\CampaignSendingStarted;
 use Domains\Delivery\Models\Campaign;
 use Domains\Delivery\Notifications\NewsletterPublishedNotification;
+use Domains\Delivery\Services\ResendBatchService;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -47,26 +48,73 @@ class SendCampaignJob implements ShouldQueue
             'total' => 0,
             'sent' => 0,
             'failed' => 0,
-            'opened' => 0,
+            // 'opened' is reserved for tracking via webhooks; not populated in batch send flow
         ];
 
         try {
-            Subscriber::query()
+            $subscribers = Subscriber::query()
                 ->where('workspace_id', $campaign->workspace_id)
                 ->where('status', 'active')
                 ->orderBy('email')
-                ->cursor()
-                ->each(function (Subscriber $subscriber) use (&$stats, $campaign): void {
-                    $stats['total']++;
+                ->get();
 
-                    if ($this->sendToSubscriber($campaign, $subscriber)) {
-                        $stats['sent']++;
+            // Extract subject and html using existing notification renderer
+            $notification = new NewsletterPublishedNotification($campaign->post);
+            $subject = ($campaign->post->workspace?->name ?? 'Freetter').': '.$campaign->post->title;
+            $html = $notification->renderNewsletterHtml();
 
-                        return;
-                    }
+            $from = $campaign->post->workspace?->sending_email ?? config('mail.from.address');
 
-                    $stats['failed']++;
-                });
+            $service = app(ResendBatchService::class);
+
+            $chunks = $subscribers->chunk(100);
+
+            foreach ($chunks as $chunkIndex => $chunk) {
+                $batchSubscribers = $chunk->map(fn (Subscriber $s) => ['email' => $s->email, 'name' => $s->name ?? null])->all();
+                $batchSize = count($batchSubscribers);
+
+                Log::info('delivery.campaign.batch_sending_started', [
+                    'campaign_id' => $campaign->id,
+                    'workspace_id' => $campaign->workspace_id,
+                    'post_id' => $campaign->post_id,
+                    'chunk_index' => $chunkIndex,
+                    'batch_size' => $batchSize,
+                ]);
+
+                $stats['total'] += $batchSize;
+
+                $results = $service->sendBatch($from, $subject, $html, $batchSubscribers);
+
+                // ResendBatchService returns array of results per chunk; since we send one chunk per call, inspect first result
+                $result = $results[0] ?? null;
+
+                if (is_array($result)) {
+                    $sentCount = (int) ($result['sent_count'] ?? ($result['success'] ? $batchSize : 0));
+                    $failedCount = (int) ($result['failed_count'] ?? ($batchSize - $sentCount));
+
+                    $stats['sent'] += $sentCount;
+                    $stats['failed'] += $failedCount;
+
+                    Log::info('delivery.campaign.batch_sent', [
+                        'campaign_id' => $campaign->id,
+                        'workspace_id' => $campaign->workspace_id,
+                        'chunk_index' => $chunkIndex,
+                        'sent' => $sentCount,
+                        'failed' => $failedCount,
+                        'status' => $result['status'] ?? 'unknown',
+                    ]);
+                } else {
+                    // Unknown result shape: mark whole chunk as failed
+                    $stats['failed'] += $batchSize;
+                    Log::warning('delivery.campaign.batch_failed', [
+                        'campaign_id' => $campaign->id,
+                        'workspace_id' => $campaign->workspace_id,
+                        'chunk_index' => $chunkIndex,
+                        'batch_size' => $batchSize,
+                        'error' => 'No result from service',
+                    ]);
+                }
+            }
 
             $campaign->complete($stats);
 
@@ -82,53 +130,5 @@ class SendCampaignJob implements ShouldQueue
 
             throw $exception;
         }
-    }
-
-    private function sendToSubscriber(Campaign $campaign, Subscriber $subscriber): bool
-    {
-        $shouldFail = str_contains($subscriber->email, 'fail+');
-
-        if ($shouldFail) {
-            Log::info('delivery.campaign.send_attempt', [
-                'campaign_id' => $campaign->id,
-                'workspace_id' => $campaign->workspace_id,
-                'post_id' => $campaign->post_id,
-                'subscriber_id' => $subscriber->id,
-                'email' => $subscriber->email,
-                'provider' => 'resend',
-                'result' => 'failed',
-            ]);
-
-            return false;
-        }
-
-        try {
-            Notification::route('mail', $subscriber->email)->notify(new NewsletterPublishedNotification($campaign->post));
-        } catch (Throwable $exception) {
-            Log::warning('delivery.campaign.send_attempt', [
-                'campaign_id' => $campaign->id,
-                'workspace_id' => $campaign->workspace_id,
-                'post_id' => $campaign->post_id,
-                'subscriber_id' => $subscriber->id,
-                'email' => $subscriber->email,
-                'provider' => 'resend',
-                'result' => 'failed',
-                'error' => $exception->getMessage(),
-            ]);
-
-            return false;
-        }
-
-        Log::info('delivery.campaign.send_attempt', [
-            'campaign_id' => $campaign->id,
-            'workspace_id' => $campaign->workspace_id,
-            'post_id' => $campaign->post_id,
-            'subscriber_id' => $subscriber->id,
-            'email' => $subscriber->email,
-            'provider' => 'resend',
-            'result' => 'sent',
-        ]);
-
-        return true;
     }
 }
