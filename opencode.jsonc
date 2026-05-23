@@ -11,6 +11,19 @@
         "--mcp"
       ],
       "enabled": true
+    },
+    "laravel-boost": {
+      "type": "local",
+      "command": [
+        "docker",
+        "exec",
+        "-i",
+        "devcontainer-cli-1",
+        "php",
+        "/workspaces/freetter-newsletter-manager/artisan",
+        "boost:mcp"
+      ],
+      "enabled": true
     }
   }
 }
