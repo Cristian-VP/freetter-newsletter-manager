@@ -61,7 +61,7 @@ class SendCampaignJob implements ShouldQueue
             // Extract subject and html using existing notification renderer
             $notification = new NewsletterPublishedNotification($campaign->post);
             $subject = ($campaign->post->workspace?->name ?? 'Freetter').': '.$campaign->post->title;
-            $html = $notification->renderNewsletterHtml();
+            $html = $notification->renderEmailHtml();
 
             $from = $campaign->post->workspace?->sending_email ?? config('mail.from.address');
 

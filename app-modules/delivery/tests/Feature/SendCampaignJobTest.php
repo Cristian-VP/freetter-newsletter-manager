@@ -206,4 +206,170 @@ class SendCampaignJobTest extends TestCase
 
         (new SendCampaignJob($campaign->id))->handle();
     }
+
+    public function test_job_sends_html_with_inlined_css(): void
+    {
+        Event::fake([CampaignSendingStarted::class, CampaignCompleted::class]);
+        Http::fake(function ($request) {
+            return Http::response(['results' => [['to' => 'test@example.com', 'status' => 'sent']]], 200);
+        });
+
+        $workspace = Workspace::factory()->create();
+        $author = User::factory()->create();
+        $post = Post::factory()->newsletter()->create([
+            'workspace_id' => $workspace->id,
+            'author_id' => $author->id,
+            'title' => 'CSS Test',
+            'content' => [
+                'type' => 'doc',
+                'content' => [
+                    [
+                        'type' => 'paragraph',
+                        'content' => [
+                            ['type' => 'text', 'text' => 'Hello world'],
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $campaign = Campaign::query()->create([
+            'workspace_id' => $workspace->id,
+            'post_id' => $post->id,
+            'status' => 'queued',
+            'stats' => [
+                'total' => 0,
+                'sent' => 0,
+                'failed' => 0,
+            ],
+        ]);
+
+        Subscriber::factory()->active()->create([
+            'workspace_id' => $workspace->id,
+            'email' => 'test@example.com',
+        ]);
+
+        (new SendCampaignJob($campaign->id))->handle();
+
+        Http::assertSent(function ($request) {
+            $payload = $request->data();
+            $html = $payload[0]['html'] ?? '';
+
+            return str_contains($html, 'style=') && ! str_contains($html, '<style');
+        });
+    }
+
+    public function test_job_preserves_absolute_image_urls_in_html(): void
+    {
+        Event::fake([CampaignSendingStarted::class, CampaignCompleted::class]);
+        Http::fake(function ($request) {
+            return Http::response(['results' => [['to' => 'test@example.com', 'status' => 'sent']]], 200);
+        });
+
+        $workspace = Workspace::factory()->create();
+        $author = User::factory()->create();
+        $post = Post::factory()->newsletter()->create([
+            'workspace_id' => $workspace->id,
+            'author_id' => $author->id,
+            'title' => 'Image URL Test',
+            'content' => [
+                'type' => 'doc',
+                'content' => [
+                    [
+                        'type' => 'image',
+                        'attrs' => [
+                            'src' => 'https://cdn.example.com/newsletter-banner.jpg',
+                            'alt' => 'Banner',
+                            'title' => 'Banner',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $campaign = Campaign::query()->create([
+            'workspace_id' => $workspace->id,
+            'post_id' => $post->id,
+            'status' => 'queued',
+            'stats' => [
+                'total' => 0,
+                'sent' => 0,
+                'failed' => 0,
+            ],
+        ]);
+
+        Subscriber::factory()->active()->create([
+            'workspace_id' => $workspace->id,
+            'email' => 'test@example.com',
+        ]);
+
+        (new SendCampaignJob($campaign->id))->handle();
+
+        Http::assertSent(function ($request) {
+            $payload = $request->data();
+            $html = $payload[0]['html'] ?? '';
+
+            return str_contains($html, 'https://cdn.example.com/newsletter-banner.jpg');
+        });
+    }
+
+    public function test_job_rejects_base64_images_in_html(): void
+    {
+        Event::fake([CampaignSendingStarted::class, CampaignCompleted::class]);
+        Http::fake(function ($request) {
+            return Http::response(['results' => [['to' => 'test@example.com', 'status' => 'sent']]], 200);
+        });
+
+        $workspace = Workspace::factory()->create();
+        $author = User::factory()->create();
+        $post = Post::factory()->newsletter()->create([
+            'workspace_id' => $workspace->id,
+            'author_id' => $author->id,
+            'title' => 'Base64 Image Test',
+            'content' => [
+                'type' => 'doc',
+                'content' => [
+                    [
+                        'type' => 'paragraph',
+                        'content' => [
+                            ['type' => 'text', 'text' => 'Hello world'],
+                        ],
+                    ],
+                    [
+                        'type' => 'image',
+                        'attrs' => [
+                            'src' => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+                            'alt' => 'Base64 image',
+                            'title' => 'Base64 image',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $campaign = Campaign::query()->create([
+            'workspace_id' => $workspace->id,
+            'post_id' => $post->id,
+            'status' => 'queued',
+            'stats' => [
+                'total' => 0,
+                'sent' => 0,
+                'failed' => 0,
+            ],
+        ]);
+
+        Subscriber::factory()->active()->create([
+            'workspace_id' => $workspace->id,
+            'email' => 'test@example.com',
+        ]);
+
+        (new SendCampaignJob($campaign->id))->handle();
+
+        Http::assertSent(function ($request) {
+            $payload = $request->data();
+            $html = $payload[0]['html'] ?? '';
+
+            return ! str_contains($html, 'data:image');
+        });
+    }
 }

@@ -1,5 +1,46 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "default_agent": "freetter-planner",
+  "agent": {
+    "plan": {
+      "disable": true
+    },
+    "build": {
+      "disable": true
+    },
+    "freetter-planner": {
+      "mode": "primary",
+      "model": "opencode-go/deepseek-v4-pro"
+    },
+    "freetter-implementer": {
+      "mode": "subagent",
+      "model": "opencode/qwen3.6-plus",
+      "permission": {
+        "bash": {
+          "ls *": "allow",
+          "cat *": "allow",
+          "grep *": "allow",
+          "git status*": "allow",
+          "php artisan*": "deny",
+          "phpunit*": "deny",
+          "composer*": "deny",
+          "npm*": "deny",
+          "node*": "deny",
+          "npx*": "deny",
+          "docker*": "deny",
+          "git add*": "deny",
+          "git commit*": "deny",
+          "git push*": "deny",
+          "git reset*": "deny",
+          "git revert*": "deny",
+          "git clean*": "deny",
+          "psql*": "deny",
+          "mysql*": "deny",
+          "*": "ask"
+        }
+      }
+    }
+  },
   "mcp": {
     "codegraph": {
       "type": "local",
@@ -15,15 +56,11 @@
     "laravel-boost": {
       "type": "local",
       "command": [
-        "docker",
-        "exec",
-        "-i",
-        "devcontainer-cli-1",
         "php",
-        "/workspaces/freetter-newsletter-manager/artisan",
+        "artisan",
         "boost:mcp"
       ],
-      "enabled": true
+      "enabled": true 
     },
     "supabase": {
       "type": "remote",

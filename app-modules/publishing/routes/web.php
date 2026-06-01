@@ -94,6 +94,8 @@ Route::prefix('publishing')->name('publishing.')->middleware(['web', 'auth'])->g
         ->name('feed');
     Route::get('/newsletters', [NewsletterIndexController::class, 'index'])
         ->name('newsletters.index');
+    Route::post('/media', [MediaController::class, 'store'])
+        ->name('media.store');
     Route::get('/media/{media}', [MediaController::class, 'show'])
         ->name('media.show');
     Route::post('/workspaces/{workspace}/posts', [PostController::class, 'store'])

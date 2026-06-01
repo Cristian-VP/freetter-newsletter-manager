@@ -21,7 +21,7 @@ class MediaFactory extends Factory
         return [
             'workspace_id' => Workspace::factory(),
             'path' => $this->faker->filePath(),
-            'disk' => $this->faker->randomElement(['local', 's3']),
+            'disk' => $this->faker->randomElement(['local', 's3', 'public']),
             'mime_type' => $this->faker->randomElement([
                 'image/jpeg',
                 'image/png',

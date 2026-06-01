@@ -55,6 +55,34 @@ class NewsletterPublishedNotification extends Notification
         return trim($this->renderNodes($nodes));
     }
 
+    public function renderEmailHtml(): string
+    {
+        $newsletterHtml = $this->renderNewsletterHtml();
+
+        $html = view('emails.newsletter-published-html', [
+            'post' => $this->post,
+            'workspaceName' => $this->post->workspace?->name ?? 'Freetter',
+            'authorName' => $this->post->author?->name ?? 'Freetter',
+            'newsletterHtml' => $newsletterHtml,
+        ])->render();
+
+        $inliner = new \TijsVerkoyen\CssToInlineStyles\CssToInlineStyles();
+        $inlinedHtml = $inliner->convert($html);
+
+        // Remove <style> tags that are no longer needed by email clients
+        $cleanedHtml = preg_replace('|<style[^>]*>.*?</style>|is', '', $inlinedHtml);
+        $html = $cleanedHtml !== null ? $cleanedHtml : $inlinedHtml;
+
+        // Strip base64 images (Gmail blocks them)
+        $html = preg_replace('/src="data:image\/[^;]+;base64,[^"]+"/', 'src=""', $html) ?? $html;
+
+        // Convert relative storage URLs to absolute
+        $appUrl = rtrim((string) config('app.url'), '/');
+        $html = preg_replace('/src="(\/storage\/[^"]+)"/', 'src="'.$appUrl.'$1"', $html) ?? $html;
+
+        return $html;
+    }
+
     /**
      * @param array<string, mixed>|array<int, mixed> $content
      * @return array<int, array<string, mixed>>
@@ -188,7 +216,7 @@ class NewsletterPublishedNotification extends Notification
         $alt = e((string) ($attrs['alt'] ?? ''));
         $title = e((string) ($attrs['title'] ?? ''));
 
-        if ($src === '') {
+        if ($src === '' || str_starts_with($src, 'data:')) {
             return '';
         }
 

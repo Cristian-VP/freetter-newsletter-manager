@@ -13,6 +13,7 @@ import { Typography } from "@tiptap/extension-typography"
 import { Underline } from "@tiptap/extension-underline"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { handleImageUpload, MAX_FILE_SIZE } from "@/lib/tiptap-utils"
+import { createImagePastePlugin } from "@/lib/tiptap-paste-handler"
 import {
   ArrowLeft,
   CalendarClock,
@@ -341,7 +342,9 @@ export default function NewsletterCreate() {
           linkOnPaste: true,
           protocols: ["http", "https", "mailto"],
         }),
-      Image,
+      Image.configure({
+        allowBase64: false,
+      }),
       ImageUploadNode.configure({
         accept: "image/*",
         maxSize: MAX_FILE_SIZE,
@@ -357,6 +360,7 @@ export default function NewsletterCreate() {
       Typography,
       Superscript,
       Subscript,
+      createImagePastePlugin(handleImageUpload),
     ],
     editorProps: {
       attributes: {

@@ -374,41 +374,56 @@ export const handleImageUpload = async (
     )
   }
 
-  // Keep the upload visible without depending on an external media endpoint.
-  // The resulting data URL is persisted in the editor JSON and renders immediately.
-  for (let progress = 0; progress < 100; progress += 10) {
-    if (abortSignal?.aborted) {
-      throw new Error("Upload cancelled")
+  return new Promise<string>((resolve, reject) => {
+    const xhr = new XMLHttpRequest()
+    const formData = new FormData()
+    formData.append("file", file)
+
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        const progress = Math.round((event.loaded / event.total) * 100)
+        onProgress?.({ progress })
+      }
     }
 
-    await new Promise((resolve) => setTimeout(resolve, 75))
-    onProgress?.({ progress })
-  }
+    xhr.onabort = () => reject(new Error("Upload cancelled"))
+    xhr.onerror = () => reject(new Error("Upload failed"))
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText)
+          onProgress?.({ progress: 100 })
+          const url = data.url
+          resolve(
+            typeof url === "string" && url.startsWith("http")
+              ? url
+              : window.location.origin + url
+          )
+        } catch {
+          reject(new Error("Invalid server response"))
+        }
+      } else {
+        reject(new Error(`Upload failed with status ${xhr.status}`))
+      }
+    }
 
-  if (abortSignal?.aborted) {
-    throw new Error("Upload cancelled")
-  }
+    if (abortSignal) {
+      const onAbort = () => {
+        xhr.abort()
+        reject(new Error("Upload cancelled"))
+      }
 
-  const dataUrl = await new Promise<string>((resolve, reject) => {
-    const reader = new FileReader()
-
-    reader.onerror = () => reject(new Error("Unable to read image"))
-    reader.onabort = () => reject(new Error("Upload cancelled"))
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        resolve(reader.result)
+      if (abortSignal.aborted) {
+        onAbort()
         return
       }
 
-      reject(new Error("Unable to read image"))
+      abortSignal.addEventListener("abort", onAbort)
     }
 
-    reader.readAsDataURL(file)
+    xhr.open("POST", "/publishing/media")
+    xhr.send(formData)
   })
-
-  onProgress?.({ progress: 100 })
-
-  return dataUrl
 }
 
 type ProtocolOptions = {

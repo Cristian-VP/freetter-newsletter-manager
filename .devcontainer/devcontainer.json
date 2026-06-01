@@ -3,10 +3,10 @@
     "service": "cli",
     "remoteUser": "user",
     "shutdownAction": "stopCompose",
-    "workspaceFolder": "/workspaces/freetter-newsletter-manager",
+    "workspaceFolder": "/workspace",
     "dockerComposeFile": "compose.yaml",
     "forwardPorts": [80, 5173],
-    "postCreateCommand": "npx codegraph init -i; composer --version && php -v",
+    "postCreateCommand": "composer --version && php -v",
     "customizations": {
         "vscode": {
             "extensions": [

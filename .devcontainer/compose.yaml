@@ -3,12 +3,12 @@ services:
   cli:
     build: cli
     volumes:
-      - ..:/workspaces/freetter-newsletter-manager
+      - ..:/workspace
 
   fpm:
     build: fpm
     volumes:
-      - ..:/workspaces/freetter-newsletter-manager
+      - ..:/workspace
     user: 1000:1000
     depends_on:
       postgres:
@@ -19,7 +19,7 @@ services:
   nginx:
     build: nginx
     volumes:
-      - ..:/workspaces/freetter-newsletter-manager
+      - ..:/workspace
     ports:
       - "80:80"
     depends_on:

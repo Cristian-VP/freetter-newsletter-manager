@@ -78,4 +78,96 @@ class NewsletterPublishedNotificationTest extends TestCase
         $this->assertStringContainsString('<strong>newsletter</strong>', $mailMessage->viewData['newsletterHtml']);
         $this->assertStringContainsString('newsletter-image.jpg', $mailMessage->viewData['newsletterHtml']);
     }
+
+    public function test_render_email_html_inlines_css(): void
+    {
+        $workspace = Workspace::factory()->create([
+            'name' => 'Test Workspace',
+        ]);
+
+        $author = User::factory()->create([
+            'name' => 'Test Author',
+        ]);
+
+        $post = Post::factory()->newsletter()->create([
+            'workspace_id' => $workspace->id,
+            'author_id' => $author->id,
+            'title' => 'CSS Inline Test',
+            'content' => [
+                'type' => 'doc',
+                'content' => [
+                    [
+                        'type' => 'heading',
+                        'attrs' => ['level' => 1],
+                        'content' => [
+                            ['type' => 'text', 'text' => 'Heading'],
+                        ],
+                    ],
+                    [
+                        'type' => 'paragraph',
+                        'content' => [
+                            ['type' => 'text', 'text' => 'Paragraph text.'],
+                        ],
+                    ],
+                    [
+                        'type' => 'image',
+                        'attrs' => [
+                            'src' => 'https://example.com/image.jpg',
+                            'alt' => 'Test image',
+                            'title' => 'Test image',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $notification = new NewsletterPublishedNotification($post);
+        $html = $notification->renderEmailHtml();
+
+        $this->assertMatchesRegularExpression('/^<!doctype html>/i', $html);
+        $this->assertStringContainsString('style=', $html);
+        $this->assertStringNotContainsString('<style', $html);
+        $this->assertStringContainsString('https://example.com/image.jpg', $html);
+    }
+
+    public function test_render_email_html_strips_base64_images(): void
+    {
+        $workspace = Workspace::factory()->create([
+            'name' => 'Test Workspace',
+        ]);
+
+        $author = User::factory()->create([
+            'name' => 'Test Author',
+        ]);
+
+        $post = Post::factory()->newsletter()->create([
+            'workspace_id' => $workspace->id,
+            'author_id' => $author->id,
+            'title' => 'Base64 Test',
+            'content' => [
+                'type' => 'doc',
+                'content' => [
+                    [
+                        'type' => 'paragraph',
+                        'content' => [
+                            ['type' => 'text', 'text' => 'Hello world'],
+                        ],
+                    ],
+                    [
+                        'type' => 'image',
+                        'attrs' => [
+                            'src' => 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+                            'alt' => 'Base64 image',
+                            'title' => 'Base64 image',
+                        ],
+                    ],
+                ],
+            ],
+        ]);
+
+        $notification = new NewsletterPublishedNotification($post);
+        $html = $notification->renderEmailHtml();
+
+        $this->assertStringNotContainsString('data:image/png;base64', $html);
+    }
 }

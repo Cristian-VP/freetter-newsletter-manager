@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 
 class Media extends Model
 {
@@ -48,6 +49,11 @@ class Media extends Model
     public function scopeForWorkspace(Builder $query, string $workspaceId): Builder
     {
         return $query->where('workspace_id', $workspaceId);
+    }
+
+    public function url(): string
+    {
+        return Storage::disk((string) $this->disk)->url((string) $this->path);
     }
 
     private function resolvePostMediaPivotTable(): string

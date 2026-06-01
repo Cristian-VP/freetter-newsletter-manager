@@ -5,17 +5,48 @@ declare(strict_types=1);
 namespace Domains\Publishing\Http\Controllers;
 
 use Domains\Identity\Models\Membership;
+use Domains\Publishing\Http\Requests\StoreMediaRequest;
 use Domains\Publishing\Models\Media;
 use Illuminate\Filesystem\FilesystemAdapter;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class MediaController extends Controller
 {
+    public function store(StoreMediaRequest $request): JsonResponse
+    {
+        $file = $request->file('file');
+        $workspaceId = $request->workspaceId();
+
+        $extension = $file->getClientOriginalExtension();
+        $filename = Str::uuid()->toString().'.'.$extension;
+        $path = 'media/'.$workspaceId.'/'.$filename;
+
+        Storage::disk('public')->putFileAs(
+            dirname($path),
+            $file,
+            basename($path)
+        );
+
+        $media = Media::query()->create([
+            'workspace_id' => $workspaceId,
+            'path' => $path,
+            'disk' => 'public',
+            'mime_type' => $file->getMimeType(),
+            'size_kb' => (int) round($file->getSize() / 1024),
+        ]);
+
+        return response()->json([
+            'url' => $media->url(),
+        ]);
+    }
+
     public function show(Request $request, Media $media): StreamedResponse
     {
         $user = $request->user();
