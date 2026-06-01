@@ -155,6 +155,7 @@ export default function NewsletterPublishing() {
       content: post.content,
       excerpt: post.excerpt,
       published_at: scheduleAt,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       audience,
       delivery_channels: deliveryChannels,
     })

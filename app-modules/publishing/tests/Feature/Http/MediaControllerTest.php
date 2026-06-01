@@ -52,6 +52,9 @@ class MediaControllerTest extends TestCase
         $workspace = Workspace::factory()->create();
         $user = User::factory()->create();
 
+        // Remove auto-provisioned membership created by UserRegistered → EnsureDefaultWorkspaceForUser
+        Membership::query()->where('user_id', $user->id)->delete();
+
         Membership::factory()
             ->forUser($user)
             ->forWorkspace($workspace)

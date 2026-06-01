@@ -25,7 +25,7 @@ class StoreMediaRequest extends FormRequest
         if (! is_string($workspaceId) || $workspaceId === '') {
             $workspaceId = Membership::query()
                 ->where('user_id', (string) $user->id)
-                ->orderBy('joined_at')
+                ->orderByDesc('joined_at')
                 ->value('workspace_id');
 
             if (! is_string($workspaceId) || $workspaceId === '') {
@@ -60,7 +60,7 @@ class StoreMediaRequest extends FormRequest
 
         $derivedWorkspaceId = Membership::query()
             ->where('user_id', (string) $user->id)
-            ->orderBy('joined_at')
+            ->orderByDesc('joined_at')
             ->value('workspace_id');
 
         return is_string($derivedWorkspaceId) ? $derivedWorkspaceId : '';

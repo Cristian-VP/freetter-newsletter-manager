@@ -15,6 +15,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class PostController extends Controller
 {
@@ -109,9 +110,11 @@ class PostController extends Controller
         DB::transaction(function () use ($request, $postModel): void {
             $this->syncPostContent($postModel, $request);
 
+            $publishedAt = $this->parsePublishedAtFromRequest($request);
+
             $postModel->update([
                 'status' => 'scheduled',
-                'published_at' => $request->date('published_at'),
+                'published_at' => $publishedAt,
             ]);
         });
 
@@ -144,7 +147,7 @@ class PostController extends Controller
         $status = $this->resolveStatus($request);
         $content = $this->normalizeContent($request->input('content'));
         $publishedAt = $status === 'scheduled'
-            ? $request->date('published_at')
+            ? $this->parsePublishedAtFromRequest($request)
             : ($status === 'published' ? now() : null);
 
         $slugBase = Str::slug($request->string('title')->value());
@@ -229,6 +232,26 @@ class PostController extends Controller
         }
 
         return $content;
+    }
+
+    private function parsePublishedAtFromRequest(Request $request): ?Carbon
+    {
+        $raw = $request->input('published_at');
+        if (! $raw) {
+            return null;
+        }
+
+        $timezone = $request->string('timezone')->value() ?: config('app.timezone', 'UTC');
+
+        try {
+            // Expecting format like 'YYYY-MM-DDTHH:MM' from the client
+            $dt = Carbon::createFromFormat('Y-m-d\TH:i', $raw, $timezone);
+        } catch (\Throwable $e) {
+            // Fallback to generic parse with provided timezone
+            $dt = Carbon::parse($raw, $timezone);
+        }
+
+        return $dt->setTimezone('UTC');
     }
 
     private function resolveStatus(StorePostRequest $request): string

@@ -536,6 +536,7 @@ export default function NewsletterCreate() {
         excerpt: editor.getText({ blockSeparator: " " }).replace(/\s+/g, " ").trim().slice(0, 240),
         status: nextStatus,
         published_at: nextStatus === "scheduled" ? scheduleAt : undefined,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         publish_now: nextStatus === "published" && !postId,
       })
 
@@ -610,6 +611,7 @@ export default function NewsletterCreate() {
         content: contentBlocks(),
         excerpt: editor.getText({ blockSeparator: " " }).replace(/\s+/g, " ").trim().slice(0, 240),
         published_at: scheduleAt,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       })
 
       setIsSubmitting(false)
