@@ -13,10 +13,10 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
         }
         .newsletter-container {
-            max-width: 600px;
+            max-width: 680px;
             margin: 0 auto;
             background-color: #ffffff;
-            padding: 40px 32px;
+            padding: 40px 48px;
             border-radius: 12px;
         }
         .newsletter-title {
@@ -27,12 +27,12 @@
             line-height: 1.2;
         }
         .newsletter-meta {
-            font-size: 14px;
+            font-size: 15px;
             color: #6b7280;
             margin: 0 0 24px 0;
         }
         .newsletter-content {
-            font-size: 16px;
+            font-size: 17px;
             line-height: 1.75;
             color: #111827;
         }
@@ -113,9 +113,38 @@
         }
         .newsletter-footer {
             text-align: center;
-            font-size: 14px;
+            font-size: 15px;
             color: #6b7280;
             margin-top: 24px;
+        }
+        @media only screen and (max-width: 600px) {
+            .newsletter-container {
+                max-width: 100% !important;
+                width: 100% !important;
+                padding: 24px 12px !important;
+                border-radius: 0 !important;
+            }
+            .newsletter-title {
+                font-size: 24px !important;
+            }
+            .newsletter-content {
+                font-size: 17px !important;
+            }
+            .newsletter-content h1 {
+                font-size: 22px !important;
+            }
+            .newsletter-content h2 {
+                font-size: 19px !important;
+            }
+            .newsletter-content h3 {
+                font-size: 17px !important;
+            }
+            .newsletter-cta a {
+                display: block !important;
+                width: 100% !important;
+                box-sizing: border-box !important;
+                text-align: center !important;
+            }
         }
     </style>
 </head>
@@ -123,7 +152,7 @@
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
         <tr>
             <td align="center" style="padding: 40px 16px;">
-                <table role="presentation" class="newsletter-container" width="600" cellpadding="0" cellspacing="0" border="0">
+                <table role="presentation" class="newsletter-container" width="680" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                         <td>
                             <h1 class="newsletter-title">{{ $post->title }}</h1>

@@ -5,7 +5,7 @@ import { NavigationIslandContainer } from "@/components/navigation/navigation-is
 import { ProfileNavAvatar } from "@/components/navigation/profile-nav-avatar";
 import { type HomeNavItemKey } from "@/components/navigation/types";
 import { cn } from "@/lib/utils";
-import { House, PencilLine, Plus, UsersRound } from "lucide-react";
+import { House, LayoutGrid, PencilLine, Plus, UsersRound } from "lucide-react";
 
 interface DesktopSideNavProps {
   activeItem: HomeNavItemKey | null;
@@ -30,6 +30,8 @@ export function DesktopSideNav({
   userName,
   userAvatar,
 }: DesktopSideNavProps) {
+  const isDashboard = activeItem === "dashboard";
+
   return (
     <aside
       className="fixed bottom-4 left-4 top-4 z-30 hidden md:block"
@@ -49,6 +51,16 @@ export function DesktopSideNav({
 
           <div className="flex flex-1 items-center">
             <nav aria-label="Desktop main navigation" className="flex w-full flex-col gap-1">
+              {isDashboard && (
+                <NavItemIconButton
+                  icon={LayoutGrid}
+                  label="Dashboard"
+                  isActive={activeItem === "dashboard"}
+                  href="/dashboard"
+                  showLabel={isExpanded}
+                />
+              )}
+
               <NavItemIconButton
                 icon={House}
                 label="Home"
@@ -57,37 +69,41 @@ export function DesktopSideNav({
                 showLabel={isExpanded}
               />
 
-              <NavItemIconButton
-                icon={UsersRound}
-                label="Subscripciones"
-                isActive={activeItem === "subscriptions"}
-                href="/subscriptions"
-                showLabel={isExpanded}
-              />
+              {!isDashboard && (
+                <>
+                  <NavItemIconButton
+                    icon={UsersRound}
+                    label="Subscripciones"
+                    isActive={activeItem === "subscriptions"}
+                    href="/subscriptions"
+                    showLabel={isExpanded}
+                  />
 
-              <NavItemIconButton
-                icon={PencilLine}
-                label="Crear"
-                isActive={activeItem === "create"}
-                href="/newsletters/resume"
-                showLabel={isExpanded}
-              />
+                  <NavItemIconButton
+                    icon={PencilLine}
+                    label="Crear"
+                    isActive={activeItem === "create"}
+                    href="/newsletters/resume"
+                    showLabel={isExpanded}
+                  />
 
-              <NavItemIconButton
-                icon={Plus}
-                label="Nuevo post"
-                isActive={false}
-                onClick={onCreatePostClick}
-                showLabel={isExpanded}
-              />
+                  <NavItemIconButton
+                    icon={Plus}
+                    label="Nuevo post"
+                    isActive={false}
+                    onClick={onCreatePostClick}
+                    showLabel={isExpanded}
+                  />
 
-              <ProfileNavAvatar
-                name={userName}
-                avatar={userAvatar}
-                isActive={activeItem === "profile"}
-                href="/profile"
-                showLabel={isExpanded}
-              />
+                  <ProfileNavAvatar
+                    name={userName}
+                    avatar={userAvatar}
+                    isActive={activeItem === "profile"}
+                    href="/profile"
+                    showLabel={isExpanded}
+                  />
+                </>
+              )}
             </nav>
           </div>
         </div>
@@ -107,6 +123,8 @@ export function DesktopSideNav({
             <AccountMenu
               className="absolute bottom-16 left-full ml-3 w-56"
               onNavigate={onToggleMenu}
+              userName={isDashboard ? userName : undefined}
+              userAvatar={isDashboard ? userAvatar : undefined}
             />
           ) : null}
         </div>

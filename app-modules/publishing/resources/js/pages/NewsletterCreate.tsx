@@ -589,7 +589,7 @@ export default function NewsletterCreate() {
       return
     }
 
-    router.visit(`/newsletters/publishing?post=${targetPostId}`)
+    router.visit(`/newsletters/publishing?newsletter=${targetPostId}`)
   }, [editor, hasUnsavedChanges, postId, showSnackbar, submitStore])
 
   const submitSchedule = useCallback(async () => {

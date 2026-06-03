@@ -29,7 +29,7 @@ export default function AuthenticatedHomeLayout({ children, onCreateClick }: Aut
       return;
     }
 
-    router.visit("/newsletters/create");
+    router.visit("/home?open=composer");
   };
 
   return (
@@ -73,6 +73,10 @@ export default function AuthenticatedHomeLayout({ children, onCreateClick }: Aut
 
 function resolveActiveNavItem(url: string): HomeNavItemKey | null {
   const pathname = normalizePathname(url);
+
+  if (pathname === "/dashboard" || pathname.startsWith("/dashboard/")) {
+    return "dashboard";
+  }
 
   if (pathname === "/home" || pathname.startsWith("/home/")) {
     return "home";

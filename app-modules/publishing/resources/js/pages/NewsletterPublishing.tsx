@@ -72,6 +72,7 @@ export default function NewsletterPublishing() {
   const page = usePage<PageProps & NewsletterPublishingProps>()
   const { auth } = page.props
   const { workspace_id: workspaceId, post } = page.props
+const fromResume = useMemo(() => new URLSearchParams(window.location.search).get('from') === 'resume', [])
 
   const [audience, setAudience] = useState<"all" | "subscribers">("subscribers")
   const [deliveryChannels, setDeliveryChannels] = useState<Array<"web" | "email">>(["web", "email"])
@@ -179,7 +180,13 @@ export default function NewsletterPublishing() {
           <div className="flex items-center justify-between gap-3">
             <button
               type="button"
-              onClick={() => router.visit(post ? `/newsletters/create?post=${post.id}` : "/newsletters/resume")}
+              onClick={() => {
+  if (fromResume) {
+    router.visit("/newsletters/resume")
+  } else {
+    router.visit(post ? `/newsletters/create?newsletter=${post.id}` : "/newsletters/resume")
+  }
+}}
               className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-700 transition hover:border-zinc-300 hover:text-zinc-950"
               aria-label="Volver al editor"
             >

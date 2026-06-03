@@ -54,7 +54,10 @@ class PublishScheduledPostsCommand extends Command
                         event(new PostPublished(
                             post: $fresh->fresh(),
                             publishedByUserId: null,
-                            context: ['published_via' => 'scheduler'],
+                            context: [
+                                'published_via' => 'scheduler',
+                                'delivery_channels' => $fresh->type === 'newsletter' ? ['email'] : ['web'],
+                            ],
                         ));
                     });
                 }

@@ -100,6 +100,16 @@ class Post extends Model
         return $query->where('type', $type);
     }
 
+    public function scopeNewsletters(Builder $query): Builder
+    {
+        return $query->where('type', 'newsletter');
+    }
+
+    public function scopeNotes(Builder $query): Builder
+    {
+        return $query->where('type', 'note');
+    }
+
     // Helper methods
 
     public function getAuthorID(): ?string

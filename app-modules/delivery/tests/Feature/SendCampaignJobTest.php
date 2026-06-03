@@ -255,7 +255,7 @@ class SendCampaignJobTest extends TestCase
             $payload = $request->data();
             $html = $payload[0]['html'] ?? '';
 
-            return str_contains($html, 'style=') && ! str_contains($html, '<style');
+            return str_contains($html, 'style=') && str_contains($html, '@media');
         });
     }
 

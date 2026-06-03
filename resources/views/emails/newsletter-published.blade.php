@@ -5,7 +5,7 @@
     {{ $authorName }} · {{ $workspaceName }}
 </p>
 
-<div style="font-size: 16px; line-height: 1.75; color: #111827;">
+<div style=" width: 900px; font-size: 16px; line-height: 1.75; color: #111827;">
     {!! $newsletterHtml !!}
 </div>
 

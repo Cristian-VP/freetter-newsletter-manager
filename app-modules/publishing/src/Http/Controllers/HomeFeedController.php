@@ -85,6 +85,7 @@ class HomeFeedController extends Controller
 
         $postsQuery = Post::query()
             ->published()
+            ->ofType('note')
             ->with(['author:id,name,avatar_path', 'media'])
             ->orderByDesc('published_at')
             ->orderByDesc('id');

@@ -2,9 +2,9 @@
 
 use Domains\Identity\Http\Controllers\InvitationController;
 use Domains\Identity\Http\Controllers\MagicLinkAuthController;
+use Domains\Identity\Http\Controllers\ProfileController;
 use Domains\Identity\Http\Controllers\WorkspaceController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 Route::post('/register', [MagicLinkAuthController::class, 'register'])
     ->middleware('web')
@@ -31,12 +31,27 @@ Route::get('/auth/session-status', [MagicLinkAuthController::class, 'sessionStat
     ->name('auth.session-status');
 
 Route::middleware(['web', 'auth'])->group(function (): void {
-    Route::get('/profile', static fn () => Inertia::render('identity::Profile'))
+    Route::get('/profile', [ProfileController::class, 'show'])
         ->name('profile');
+
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])
+        ->name('profile.edit');
+
+    Route::patch('/profile/edit', [ProfileController::class, 'update'])
+        ->name('profile.update');
 });
 
 Route::prefix('identity')->name('identity.')->middleware(['web', 'auth'])->group(function (): void {
     Route::post('/workspaces', [WorkspaceController::class, 'store'])->name('workspaces.store');
     Route::post('/workspaces/{workspace}/invitations', [InvitationController::class, 'store'])
         ->name('workspaces.invitations.store');
+
+    Route::get('/profile/newsletters', [ProfileController::class, 'newsletters'])
+        ->name('profile.newsletters');
+
+    Route::get('/profile/newsletters/{id}', [ProfileController::class, 'showNewsletter'])
+        ->name('profile.newsletters.show');
+
+    Route::get('/profile/bookmarks', [ProfileController::class, 'bookmarks'])
+        ->name('profile.bookmarks');
 });

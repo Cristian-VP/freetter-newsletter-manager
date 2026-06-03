@@ -6,6 +6,7 @@ use Domains\Publishing\Models\Post;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
+use TijsVerkoyen\CssToInlineStyles\CssToInlineStyles;
 
 class NewsletterPublishedNotification extends Notification
 {
@@ -66,11 +67,15 @@ class NewsletterPublishedNotification extends Notification
             'newsletterHtml' => $newsletterHtml,
         ])->render();
 
-        $inliner = new \TijsVerkoyen\CssToInlineStyles\CssToInlineStyles();
+        $inliner = new CssToInlineStyles;
         $inlinedHtml = $inliner->convert($html);
 
-        // Remove <style> tags that are no longer needed by email clients
-        $cleanedHtml = preg_replace('|<style[^>]*>.*?</style>|is', '', $inlinedHtml);
+        // Remove <style> tags that are no longer needed by email clients, but preserve those with @media queries
+        $cleanedHtml = preg_replace_callback(
+            '|<style[^>]*>(.*?)</style>|is',
+            static fn (array $m): string => str_contains($m[1], '@media') ? $m[0] : '',
+            $inlinedHtml
+        );
         $html = $cleanedHtml !== null ? $cleanedHtml : $inlinedHtml;
 
         // Strip base64 images (Gmail blocks them)
@@ -84,7 +89,7 @@ class NewsletterPublishedNotification extends Notification
     }
 
     /**
-     * @param array<string, mixed>|array<int, mixed> $content
+     * @param  array<string, mixed>|array<int, mixed>  $content
      * @return array<int, array<string, mixed>>
      */
     private function normalizeNodes(array $content): array
@@ -99,7 +104,7 @@ class NewsletterPublishedNotification extends Notification
     }
 
     /**
-     * @param array<int, array<string, mixed>> $nodes
+     * @param  array<int, array<string, mixed>>  $nodes
      */
     private function renderNodes(array $nodes): string
     {
@@ -113,7 +118,7 @@ class NewsletterPublishedNotification extends Notification
     }
 
     /**
-     * @param array<string, mixed> $node
+     * @param  array<string, mixed>  $node
      */
     private function renderNode(array $node): string
     {
@@ -136,7 +141,7 @@ class NewsletterPublishedNotification extends Notification
     }
 
     /**
-     * @param array<string, mixed> $node
+     * @param  array<string, mixed>  $node
      */
     private function renderHeading(array $node): string
     {
@@ -147,8 +152,8 @@ class NewsletterPublishedNotification extends Notification
     }
 
     /**
-     * @param array<string, mixed> $node
-     * @param array<string, string> $attributes
+     * @param  array<string, mixed>  $node
+     * @param  array<string, string>  $attributes
      */
     private function renderList(array $node, string $tag, array $attributes = []): string
     {
@@ -167,8 +172,8 @@ class NewsletterPublishedNotification extends Notification
     }
 
     /**
-     * @param array<string, mixed> $node
-     * @param array<string, string> $attributes
+     * @param  array<string, mixed>  $node
+     * @param  array<string, string>  $attributes
      */
     private function wrapBlock(string $tag, string $content, array $attributes = []): string
     {
@@ -178,7 +183,7 @@ class NewsletterPublishedNotification extends Notification
     }
 
     /**
-     * @param array<string, mixed> $node
+     * @param  array<string, mixed>  $node
      */
     private function renderListItem(array $node): string
     {
@@ -207,7 +212,7 @@ class NewsletterPublishedNotification extends Notification
     }
 
     /**
-     * @param array<string, mixed> $node
+     * @param  array<string, mixed>  $node
      */
     private function renderImage(array $node): string
     {
@@ -229,7 +234,7 @@ class NewsletterPublishedNotification extends Notification
     }
 
     /**
-     * @param array<string, mixed> $node
+     * @param  array<string, mixed>  $node
      */
     private function renderCodeBlock(array $node): string
     {
@@ -242,7 +247,7 @@ class NewsletterPublishedNotification extends Notification
     }
 
     /**
-     * @param array<int, array<string, mixed>> $nodes
+     * @param  array<int, array<string, mixed>>  $nodes
      */
     private function renderInline(array $nodes): string
     {
@@ -256,7 +261,7 @@ class NewsletterPublishedNotification extends Notification
     }
 
     /**
-     * @param array<string, mixed> $node
+     * @param  array<string, mixed>  $node
      */
     private function renderInlineNode(array $node): string
     {
@@ -280,7 +285,7 @@ class NewsletterPublishedNotification extends Notification
     }
 
     /**
-     * @param array<string, mixed> $mark
+     * @param  array<string, mixed>  $mark
      */
     private function applyMark(string $content, array $mark): string
     {
@@ -299,7 +304,7 @@ class NewsletterPublishedNotification extends Notification
     }
 
     /**
-     * @param array<string, mixed> $mark
+     * @param  array<string, mixed>  $mark
      */
     private function renderLink(string $content, array $mark): string
     {
@@ -312,7 +317,7 @@ class NewsletterPublishedNotification extends Notification
     }
 
     /**
-     * @param array<string, string> $attributes
+     * @param  array<string, string>  $attributes
      */
     private function renderAttributes(array $attributes): string
     {

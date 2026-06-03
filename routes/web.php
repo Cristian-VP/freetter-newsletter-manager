@@ -2,8 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Http\Controllers\Settings\PasswordController;
-use App\Http\Controllers\Settings\ProfileController;
+use App\Http\Controllers\DashboardController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -23,9 +22,7 @@ Route::middleware('auth')->group(function () {
         return Inertia::render('Settings');
     })->name('settings');
 
-    Route::get('/dashboard', function () {
-        return Inertia::render('Dashboard');
-    })->name('dashboard');
+    Route::get('/dashboard', DashboardController::class)->name('dashboard');
 
     /**
      * Example Routes for Adapting to My Project

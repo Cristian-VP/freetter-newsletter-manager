@@ -126,7 +126,7 @@ class NewsletterPublishedNotificationTest extends TestCase
 
         $this->assertMatchesRegularExpression('/^<!doctype html>/i', $html);
         $this->assertStringContainsString('style=', $html);
-        $this->assertStringNotContainsString('<style', $html);
+        $this->assertStringContainsString('@media', $html);
         $this->assertStringContainsString('https://example.com/image.jpg', $html);
     }
 

@@ -1,1 +1,1 @@
-export type HomeNavItemKey = "home" | "subscriptions" | "create" | "profile";
+export type HomeNavItemKey = "dashboard" | "home" | "subscriptions" | "create" | "profile";

@@ -100,7 +100,10 @@ class NewsletterIndexController extends Controller
                     'created_at' => $post->created_at?->toIso8601String(),
                     'published_at' => $post->published_at?->toIso8601String(),
                     'updated_at' => $post->updated_at?->toIso8601String(),
-                    'builder_url' => route('newsletters.publishing', ['post' => $post->id]),
+                    'builder_url' => $post->status === 'published'
+                        ? route('newsletters.preview', ['newsletter' => $post->id])
+                        : route('newsletters.create', ['newsletter' => $post->id]),
+                    'publish_url' => route('newsletters.publishing', ['newsletter' => $post->id]),
                 ];
             })
             ->values()

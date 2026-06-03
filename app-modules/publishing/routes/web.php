@@ -27,11 +27,11 @@ Route::middleware(['web', 'auth'])->group(function (): void {
             ->pluck('workspace_id');
 
         $workspaceId = $workspaceIds->first();
-        $postId = $request->query('post');
+        $newsletterId = $request->query('newsletter') ?? $request->query('post');
         $post = null;
 
-        if (is_string($postId) && $postId !== '') {
-            $post = Post::query()->findOrFail($postId);
+        if (is_string($newsletterId) && $newsletterId !== '') {
+            $post = Post::query()->findOrFail($newsletterId);
             abort_unless($workspaceIds->contains($post->workspace_id), 403);
             $workspaceId = $post->workspace_id;
         }
@@ -61,11 +61,11 @@ Route::middleware(['web', 'auth'])->group(function (): void {
             ->pluck('workspace_id');
 
         $workspaceId = $workspaceIds->first();
-        $postId = $request->query('post');
+        $newsletterId = $request->query('newsletter') ?? $request->query('post');
         $post = null;
 
-        if (is_string($postId) && $postId !== '') {
-            $post = Post::query()->findOrFail($postId);
+        if (is_string($newsletterId) && $newsletterId !== '') {
+            $post = Post::query()->findOrFail($newsletterId);
             abort_unless($workspaceIds->contains($post->workspace_id), 403);
             $workspaceId = $post->workspace_id;
         }
@@ -85,8 +85,40 @@ Route::middleware(['web', 'auth'])->group(function (): void {
         ]);
     })->name('newsletters.publishing');
 
-    Route::get('/newsletters/preview', static fn () => Inertia::render('publishing::NewsletterPreview'))
-        ->name('newsletters.preview');
+    Route::get('/newsletters/preview', function (Request $request) {
+        $user = $request->user();
+        abort_unless($user, 401);
+
+        $newsletterId = $request->query('newsletter') ?? $request->query('post');
+        $post = null;
+
+        if (is_string($newsletterId) && $newsletterId !== '') {
+            $post = Post::query()
+                ->with(['workspace:id,name,slug'])
+                ->findOrFail($newsletterId);
+
+            $workspaceIds = Membership::query()
+                ->where('user_id', (string) $user->id)
+                ->orderBy('joined_at')
+                ->pluck('workspace_id');
+
+            abort_unless($workspaceIds->contains($post->workspace_id), 403);
+        }
+
+        return Inertia::render('publishing::NewsletterPreview', [
+            'post' => $post ? [
+                'id' => $post->id,
+                'workspace_id' => $post->workspace_id,
+                'title' => $post->title,
+                'status' => $post->status,
+                'excerpt' => $post->excerpt,
+                'published_at' => $post->published_at?->toIso8601String(),
+                'slug' => $post->slug,
+                'workspace_name' => $post->workspace?->name,
+                'body_text' => $post->getExcerpt(10000),
+            ] : null,
+        ]);
+    })->name('newsletters.preview');
 });
 
 Route::prefix('publishing')->name('publishing.')->middleware(['web', 'auth'])->group(function (): void {
@@ -106,4 +138,14 @@ Route::prefix('publishing')->name('publishing.')->middleware(['web', 'auth'])->g
         ->name('posts.schedule');
     Route::delete('/posts/{post}', [PostController::class, 'destroy'])
         ->name('posts.destroy');
+});
+
+Route::middleware('web')->group(function (): void {
+    Route::get('/{workspace}/p/{post}', function ($workspace, $post) {
+        return 'Post public view placeholder';
+    })->name('publishing.posts.show');
+
+    Route::get('/{workspace}/n/{post}', function ($workspace, $post) {
+        return 'Newsletter public view placeholder';
+    })->name('publishing.newsletters.show');
 });
