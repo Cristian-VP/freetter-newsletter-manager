@@ -8,7 +8,6 @@
 .env.production
 .phpactor.json
 .phpunit.result.cache
-.opencode.jsonc
 
 # Directories
 /.fleet
@@ -25,13 +24,17 @@
 /storage/*.key
 /storage/pail
 /vendor
-/.opencode
-/.context
-/.agents
-/.codegraph
-/.github
+/.opencode/
+/.context/
+/.agents/
+/.codegraph/
+/.github/
+/.cursor/
 
 # Files
+opencode.jsonc
+freetter-planner.md
+evidencia-event-architecture.md
 Homestead.json
 Homestead.yaml
 Thumbs.db
