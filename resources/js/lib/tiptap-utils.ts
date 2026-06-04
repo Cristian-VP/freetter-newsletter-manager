@@ -13,7 +13,7 @@ import {
   type NodeWithPos,
 } from "@tiptap/react"
 
-export const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+export const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
 export const MAC_SYMBOLS: Record<string, string> = {
   mod: "⌘",
@@ -422,6 +422,19 @@ export const handleImageUpload = async (
     }
 
     xhr.open("POST", "/publishing/media")
+
+    const getCookie = (name: string) => {
+      const value = `; ${document.cookie}`
+      const parts = value.split(`; ${name}=`)
+      if (parts.length === 2) return decodeURIComponent(parts.pop()?.split(";").shift() || "")
+      return ""
+    }
+
+    const xsrfToken = getCookie("XSRF-TOKEN")
+    if (xsrfToken) {
+      xhr.setRequestHeader("X-XSRF-TOKEN", xsrfToken)
+    }
+
     xhr.send(formData)
   })
 }
