@@ -3,19 +3,21 @@
 namespace Domains\Identity\Models;
 
 use Domains\Identity\Database\Factories\UserFactory;
-use Illuminate\Foundation\Auth\User as Authenticatable;
-use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Notifications\Notifiable;
 
 class User extends Authenticatable
 {
-    use HasUuids, Notifiable, HasFactory;
+    use HasFactory, HasUuids, Notifiable;
 
     protected $table = 'identity_users';
 
     protected $fillable = [
         'name',
+        'handle',
+        'bio',
         'email',
         'email_verified_at',
         'avatar_path',
@@ -44,6 +46,6 @@ class User extends Authenticatable
     public function workspaces()
     {
         return $this->belongsToMany(Workspace::class, 'identity_memberships')
-                    ->withPivot('role', 'joined_at');
+            ->withPivot('role', 'joined_at');
     }
 }

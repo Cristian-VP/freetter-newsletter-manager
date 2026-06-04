@@ -1,0 +1,57 @@
+<?php
+
+use Domains\Identity\Http\Controllers\InvitationController;
+use Domains\Identity\Http\Controllers\MagicLinkAuthController;
+use Domains\Identity\Http\Controllers\ProfileController;
+use Domains\Identity\Http\Controllers\WorkspaceController;
+use Illuminate\Support\Facades\Route;
+
+Route::post('/register', [MagicLinkAuthController::class, 'register'])
+    ->middleware('web')
+    ->name('register.magic-link');
+
+Route::post('/login', [MagicLinkAuthController::class, 'login'])
+    ->middleware('web')
+    ->name('login.magic-link');
+
+Route::post('/logout', [MagicLinkAuthController::class, 'logout'])
+    ->middleware(['web', 'auth'])
+    ->name('logout');
+
+Route::get('/login', static fn () => redirect()->route('landing'))
+    ->middleware('web')
+    ->name('login');
+
+Route::get('/magic-links/{user}', [MagicLinkAuthController::class, 'authenticate'])
+    ->middleware('web')
+    ->name('magic-links.authenticate');
+
+Route::get('/auth/session-status', [MagicLinkAuthController::class, 'sessionStatus'])
+    ->middleware('web')
+    ->name('auth.session-status');
+
+Route::middleware(['web', 'auth'])->group(function (): void {
+    Route::get('/profile', [ProfileController::class, 'show'])
+        ->name('profile');
+
+    Route::get('/profile/edit', [ProfileController::class, 'edit'])
+        ->name('profile.edit');
+
+    Route::patch('/profile/edit', [ProfileController::class, 'update'])
+        ->name('profile.update');
+});
+
+Route::prefix('identity')->name('identity.')->middleware(['web', 'auth'])->group(function (): void {
+    Route::post('/workspaces', [WorkspaceController::class, 'store'])->name('workspaces.store');
+    Route::post('/workspaces/{workspace}/invitations', [InvitationController::class, 'store'])
+        ->name('workspaces.invitations.store');
+
+    Route::get('/profile/newsletters', [ProfileController::class, 'newsletters'])
+        ->name('profile.newsletters');
+
+    Route::get('/profile/newsletters/{id}', [ProfileController::class, 'showNewsletter'])
+        ->name('profile.newsletters.show');
+
+    Route::get('/profile/bookmarks', [ProfileController::class, 'bookmarks'])
+        ->name('profile.bookmarks');
+});

@@ -2,12 +2,11 @@
 
 namespace Domains\Activity\Models;
 
-use Domains\Identity\Models\User;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Domains\Activity\Database\Factories\ActivityLogFactory;
 
 /**
@@ -55,14 +54,9 @@ class ActivityLog extends Model
         'created_at' => 'datetime',
     ];
 
-    /**
-     * Relación: ¿Quién realizó esta acción?
-     *
-     * Nullable porque puede ser acción del sistema (cron jobs, webhooks)
-     */
-    public function user(): BelongsTo
+    public function activityStream(): HasMany
     {
-        return $this->belongsTo(User::class);
+        return $this->hasMany(ActivityStream::class, 'log_id');
     }
 
     // ─────────────────────────────────────────────────────────────────
@@ -150,7 +144,7 @@ class ActivityLog extends Model
      *     action: 'workspace.deleted',
      *     entityType: 'workspace',
      *     entityId: $workspace->id,
-     *     user: $currentUser,
+     *     userId: $currentUserId,
      *     metadata: ['reason' => 'Owner request']
      * );
      * ```
@@ -164,11 +158,11 @@ class ActivityLog extends Model
         string $action,
         string $entityType,
         string $entityId,
-        ?User $user = null,
+        ?string $userId = null,
         ?array $metadata = null
     ): self {
         return self::create([
-            'user_id' => $user?->id,
+            'user_id' => $userId, // Nullable para acciones del sistema
             'action' => $action,
             'entity_type' => $entityType,
             'entity_id' => $entityId,
@@ -191,7 +185,7 @@ class ActivityLog extends Model
             action: $action,
             entityType: $entityType,
             entityId: $entityId,
-            user: null,
+            userId: null,
             metadata: $metadata
         );
     }

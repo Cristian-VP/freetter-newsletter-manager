@@ -6,10 +6,9 @@ use Domains\Identity\Models\Invitation;
 use Domains\Identity\Models\User;
 use Domains\Identity\Models\Workspace;
 use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Str;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\Domains\Identity\Models\Invitation>
+ * @extends Factory<Invitation>
  */
 class InvitationFactory extends Factory
 {
@@ -23,7 +22,7 @@ class InvitationFactory extends Factory
         return [
             'workspace_id' => Workspace::factory(),
             'email' => $this->faker->unique()->safeEmail(),
-            'role' => $this->faker->randomElement(['admin', 'editor', 'viewer','writer']),
+            'role' => $this->faker->randomElement(['admin', 'editor', 'writer']),
             'token' => Invitation::generateToken(),
             'expires_at' => now()->addDays(7), // Válida por 7 días
             'accepted_by_user_id' => null,
@@ -68,16 +67,6 @@ class InvitationFactory extends Factory
     {
         return $this->state([
             'role' => 'editor',
-        ]);
-    }
-
-    /**
-     * Invitación con rol viewer
-     */
-    public function viewer(): static
-    {
-        return $this->state([
-            'role' => 'viewer',
         ]);
     }
 
@@ -142,7 +131,7 @@ class InvitationFactory extends Factory
      */
     public function accepted(?User $user = null): static
     {
-        if (!$user) {
+        if (! $user) {
             $user = User::factory()->create();
         }
 

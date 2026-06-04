@@ -19,8 +19,8 @@ return new class extends Migration
             $table->string('avatar_path')->nullable();
             $table->string('remember_token')->nullable();
             $table->timestamps();
-            $table->index('email');
-            $table->index('created_at');
+            $table->index('email', 'idx_user_email');
+            $table->index('created_at', 'idx_user_created_at');
         });
     }
 

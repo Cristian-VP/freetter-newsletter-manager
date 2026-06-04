@@ -2,10 +2,10 @@
 
 namespace Domains\Activity\Providers;
 
-use Illuminate\Support\ServiceProvider;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Support\ServiceProvider;
 
 class ActivityServiceProvider extends ServiceProvider
 {
@@ -24,7 +24,8 @@ class ActivityServiceProvider extends ServiceProvider
     public function boot(): void
     {
         //  Cargar migraciones del módulo
-        $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
+        $this->loadMigrationsFrom(__DIR__.'/../../database/migrations');
+        $this->loadRoutesFrom(__DIR__.'/../../routes/web.php');
 
         //  Lazy Loading Prevention (desarrollo)
         if ($this->app->environment('local')) {
