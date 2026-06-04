@@ -276,7 +276,9 @@ export default function Home({ posts, workspace_id, feed }: HomePageProps) {
   const [mediaIndexByPostMap, setMediaIndexByPostMap] = useState<Record<string, number>>({});
   const [openMenuPostId, setOpenMenuPostId] = useState<string | null>(null);
   const [commentsPanelPostId, setCommentsPanelPostId] = useState<string | null>(null);
-  const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const [isComposerOpen, setIsComposerOpen] = useState(() => {
+    return new URLSearchParams(window.location.search).get("open") === "composer";
+  });
   const [repostComposerPost, setRepostComposerPost] = useState<FeedPost | null>(null);
   const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   const [reportModalState, setReportModalState] = useState<{
@@ -350,6 +352,17 @@ export default function Home({ posts, workspace_id, feed }: HomePageProps) {
       window.clearTimeout(timeout);
     };
   }, [snackbar.durationMs, snackbar.show]);
+
+  useEffect(() => {
+    if (isComposerOpen) {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has("open")) {
+        params.delete("open");
+        const newUrl = `${window.location.pathname}${params.toString() ? `?${params}` : ""}`;
+        window.history.replaceState({}, "", newUrl);
+      }
+    }
+  }, []);
 
   const absolutePostUrl = useCallback((post: FeedPost): string => {
     return new URL(post.post_url, window.location.origin).toString();

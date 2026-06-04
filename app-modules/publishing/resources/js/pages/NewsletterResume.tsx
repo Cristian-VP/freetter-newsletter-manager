@@ -16,6 +16,7 @@ type NewsletterItem = {
   published_at: string | null;
   updated_at: string | null;
   builder_url: string;
+  publish_url: string;
 };
 
 type NewsletterResumeResponse = {
@@ -243,13 +244,22 @@ export default function NewsletterResume() {
                             className="absolute right-0 top-9 z-10 min-w-40 rounded-xl border border-zinc-200 bg-white p-1 shadow-[0_18px_44px_rgba(15,23,42,0.16)]"
                             onClick={(event) => event.stopPropagation()}
                           >
-                            <button
-                              type="button"
-                              onClick={() => router.visit(item.builder_url)}
-                              className="flex w-full items-center justify-start rounded-lg px-3 py-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-100"
-                            >
-                              Publicar
-                            </button>
+                            {item.status === "published" ? (
+                              <div className="px-3 py-2 text-sm text-zinc-500">
+                                <span className="font-medium text-zinc-700">Publicada</span>
+                                {item.published_at ? (
+                                  <>{" "}{formatItemDate(item.published_at)}</>
+                                ) : null}
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => router.visit(`${item.publish_url}&from=resume`)}
+                                className="flex w-full items-center justify-start rounded-lg px-3 py-2 text-sm font-medium text-zinc-900 transition hover:bg-zinc-100"
+                              >
+                                Publicar
+                              </button>
+                            )}
                           </div>
                         ) : null}
                       </div>

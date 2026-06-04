@@ -334,4 +334,72 @@ class HomeFeedControllerTest extends TestCase
             ->get(route('publishing.media.show', ['media' => $media->id]))
             ->assertOk();
     }
+
+    public function test_home_feed_excludes_published_newsletters(): void
+    {
+        $workspace = Workspace::factory()->create();
+        /** @var User $viewer */
+        $viewer = User::withoutEvents(static function (): User {
+            return User::factory()->create();
+        });
+
+        Membership::factory()
+            ->forUser($viewer)
+            ->forWorkspace($workspace)
+            ->writer()
+            ->create();
+
+        $note = Post::factory()->published()->note()->create([
+            'workspace_id' => $workspace->id,
+            'author_id' => $viewer->id,
+            'title' => 'A regular note',
+        ]);
+
+        Post::factory()->published()->newsletter()->create([
+            'workspace_id' => $workspace->id,
+            'author_id' => $viewer->id,
+            'title' => 'A newsletter that must not appear in Home',
+        ]);
+
+        $response = $this->actingAs($viewer)->get('/home');
+
+        $response->assertOk();
+        $response->assertInertia(fn (AssertableInertia $page) => $page
+            ->has('posts', 1)
+            ->where('posts.0.id', $note->id)
+        );
+    }
+
+    public function test_feed_ajax_endpoint_also_excludes_newsletters(): void
+    {
+        $workspace = Workspace::factory()->create();
+        /** @var User $viewer */
+        $viewer = User::withoutEvents(static function (): User {
+            return User::factory()->create();
+        });
+
+        Membership::factory()
+            ->forUser($viewer)
+            ->forWorkspace($workspace)
+            ->writer()
+            ->create();
+
+        $note = Post::factory()->published()->note()->create([
+            'workspace_id' => $workspace->id,
+            'author_id' => $viewer->id,
+            'title' => 'A regular note for feed',
+        ]);
+
+        Post::factory()->published()->newsletter()->create([
+            'workspace_id' => $workspace->id,
+            'author_id' => $viewer->id,
+            'title' => 'A newsletter that must not appear in AJAX feed',
+        ]);
+
+        $response = $this->actingAs($viewer)->getJson('/publishing/feed');
+
+        $response->assertOk();
+        $response->assertJsonCount(1, 'data.posts');
+        $response->assertJsonPath('data.posts.0.id', $note->id);
+    }
 }

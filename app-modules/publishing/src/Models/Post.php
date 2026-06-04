@@ -43,6 +43,42 @@ class Post extends Model
         return PostFactory::new();
     }
 
+    protected static function booted(): void
+    {
+        static::saving(function (Post $post) {
+            if ($post->isDirty('content')) {
+                $content = $post->content;
+                if (is_array($content)) {
+                    $post->content = $post->normalizeImageUrls($content);
+                }
+            }
+        });
+    }
+
+    private function normalizeImageUrls(array $content): array
+    {
+        $walk = function (&$node) use (&$walk) {
+            if (is_array($node)) {
+                if (isset($node['type']) && $node['type'] === 'image' && isset($node['attrs']['src'])) {
+                    $src = $node['attrs']['src'];
+                    // Strip localhost or 127.0.0.1 from URLs to make them relative
+                    if (str_starts_with($src, 'http://localhost') || str_starts_with($src, 'http://127.0.0.1')) {
+                        $parsed = parse_url($src);
+                        if (isset($parsed['path'])) {
+                            $node['attrs']['src'] = $parsed['path'];
+                        }
+                    }
+                }
+                foreach ($node as &$child) {
+                    $walk($child);
+                }
+            }
+        };
+
+        $walk($content);
+        return $content;
+    }
+
     public function workspace(): BelongsTo
     {
         return $this->belongsTo(Workspace::class, 'workspace_id');
@@ -98,6 +134,16 @@ class Post extends Model
     public function scopeOfType(Builder $query, string $type): Builder
     {
         return $query->where('type', $type);
+    }
+
+    public function scopeNewsletters(Builder $query): Builder
+    {
+        return $query->where('type', 'newsletter');
+    }
+
+    public function scopeNotes(Builder $query): Builder
+    {
+        return $query->where('type', 'note');
     }
 
     // Helper methods

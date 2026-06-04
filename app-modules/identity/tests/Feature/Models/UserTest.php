@@ -2,12 +2,13 @@
 
 namespace Domains\Identity\Tests\Feature\Models;
 
+use Domains\Identity\Models\Membership;
 use Domains\Identity\Models\User;
 use Domains\Identity\Models\Workspace;
-use Domains\Identity\Models\Membership;
 use Illuminate\Database\Eloquent\Model;
-use Tests\TestCase;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\TestCase;
 
 class UserTest extends TestCase
 {
@@ -39,7 +40,7 @@ class UserTest extends TestCase
             'email' => 'duplicate@example.com',
         ]);
 
-        $this->expectException(\Illuminate\Database\UniqueConstraintViolationException::class);
+        $this->expectException(UniqueConstraintViolationException::class);
 
         User::factory()->create([
             'email' => 'duplicate@example.com',
@@ -51,7 +52,9 @@ class UserTest extends TestCase
      */
     public function test_user_can_have_multiple_workspaces(): void
     {
-        $user = User::factory()->create();
+        $user = User::withoutEvents(function () {
+            return User::factory()->create();
+        });
         $workspaces = Workspace::factory()->count(3)->create();
 
         foreach ($workspaces as $workspace) {
@@ -70,7 +73,9 @@ class UserTest extends TestCase
      */
     public function test_user_can_have_multiple_memberships(): void
     {
-        $user = User::factory()->create();
+        $user = User::withoutEvents(function () {
+            return User::factory()->create();
+        });
 
         Membership::factory()
             ->count(5)
@@ -109,7 +114,7 @@ class UserTest extends TestCase
             }
             $this->assertTrue(true); // Si llegamos aquí, no hubo N+1
         } finally {
-                Model::preventLazyLoading(false);
+            Model::preventLazyLoading(false);
         }
     }
 

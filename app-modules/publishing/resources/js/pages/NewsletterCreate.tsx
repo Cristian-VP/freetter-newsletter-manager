@@ -13,6 +13,7 @@ import { Typography } from "@tiptap/extension-typography"
 import { Underline } from "@tiptap/extension-underline"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { handleImageUpload, MAX_FILE_SIZE } from "@/lib/tiptap-utils"
+import { createImagePastePlugin } from "@/lib/tiptap-paste-handler"
 import {
   ArrowLeft,
   CalendarClock,
@@ -341,7 +342,9 @@ export default function NewsletterCreate() {
           linkOnPaste: true,
           protocols: ["http", "https", "mailto"],
         }),
-      Image,
+      Image.configure({
+        allowBase64: false,
+      }),
       ImageUploadNode.configure({
         accept: "image/*",
         maxSize: MAX_FILE_SIZE,
@@ -357,6 +360,7 @@ export default function NewsletterCreate() {
       Typography,
       Superscript,
       Subscript,
+      createImagePastePlugin(handleImageUpload),
     ],
     editorProps: {
       attributes: {
@@ -532,6 +536,7 @@ export default function NewsletterCreate() {
         excerpt: editor.getText({ blockSeparator: " " }).replace(/\s+/g, " ").trim().slice(0, 240),
         status: nextStatus,
         published_at: nextStatus === "scheduled" ? scheduleAt : undefined,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
         publish_now: nextStatus === "published" && !postId,
       })
 
@@ -584,7 +589,7 @@ export default function NewsletterCreate() {
       return
     }
 
-    router.visit(`/newsletters/publishing?post=${targetPostId}`)
+    router.visit(`/newsletters/publishing?newsletter=${targetPostId}`)
   }, [editor, hasUnsavedChanges, postId, showSnackbar, submitStore])
 
   const submitSchedule = useCallback(async () => {
@@ -606,6 +611,7 @@ export default function NewsletterCreate() {
         content: contentBlocks(),
         excerpt: editor.getText({ blockSeparator: " " }).replace(/\s+/g, " ").trim().slice(0, 240),
         published_at: scheduleAt,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       })
 
       setIsSubmitting(false)

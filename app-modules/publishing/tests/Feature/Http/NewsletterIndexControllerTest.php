@@ -63,7 +63,8 @@ class NewsletterIndexControllerTest extends TestCase
         $response->assertJsonCount(1, 'data.items');
         $response->assertJsonPath('data.items.0.title', 'Draft newsletter');
         $response->assertJsonPath('data.items.0.workspace_slug', $workspace->slug);
-        $response->assertJsonPath('data.items.0.builder_url', route('newsletters.publishing', ['post' => $response->json('data.items.0.id')]));
+        $response->assertJsonPath('data.items.0.builder_url', route('newsletters.create', ['newsletter' => $response->json('data.items.0.id')]));
+        $response->assertJsonPath('data.items.0.publish_url', route('newsletters.publishing', ['newsletter' => $response->json('data.items.0.id')]));
         $response->assertJsonPath('data.items.0.preview_text', 'Resumen draft');
         $response->assertJsonPath('data.filters.status', 'draft');
         $response->assertJsonPath('data.counts_by_status.all', 3);
@@ -111,6 +112,8 @@ class NewsletterIndexControllerTest extends TestCase
         $publishedResponse->assertOk();
         $publishedResponse->assertJsonCount(1, 'data.items');
         $publishedResponse->assertJsonPath('data.items.0.title', 'Published newsletter');
+        $publishedResponse->assertJsonPath('data.items.0.builder_url', route('newsletters.preview', ['newsletter' => $publishedResponse->json('data.items.0.id')]));
+        $publishedResponse->assertJsonPath('data.items.0.publish_url', route('newsletters.publishing', ['newsletter' => $publishedResponse->json('data.items.0.id')]));
 
         $allResponse = $this->actingAs($user)->getJson('/publishing/newsletters?workspace_id='.$workspace->id.'&status=all');
 
