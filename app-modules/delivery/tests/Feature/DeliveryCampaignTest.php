@@ -22,7 +22,10 @@ class DeliveryCampaignTest extends TestCase
     public function test_creates_queued_campaign_when_newsletter_is_published(): void
     {
         Event::fake([\Domains\Delivery\Events\CampaignSendingStarted::class, \Domains\Delivery\Events\CampaignCompleted::class]);
-        Notification::fake();
+        \Illuminate\Support\Facades\Http::fake([
+            'api.resend.com/emails/batch' => \Illuminate\Support\Facades\Http::response(['results' => [['status' => 'queued']]], 200),
+        ]);
+        config(['services.resend.key' => 'test-key']);
 
         $workspace = Workspace::factory()->create();
         $author = User::factory()->create();
@@ -44,9 +47,9 @@ class DeliveryCampaignTest extends TestCase
             'status' => 'sent',
         ]);
 
-        Notification::assertSentOnDemandTimes(NewsletterPublishedNotification::class, 1);
-        Notification::assertSentOnDemand(NewsletterPublishedNotification::class, function (NewsletterPublishedNotification $notification, array $channels, object $notifiable) use ($subscriber): bool {
-            return $channels === ['mail'] && ($notifiable->routes['mail'] ?? null) === $subscriber->email;
+        \Illuminate\Support\Facades\Http::assertSent(function (\Illuminate\Http\Client\Request $request) use ($subscriber) {
+            return $request->url() === 'https://api.resend.com/emails/batch' &&
+                   $request->data()[0]['to'] === $subscriber->email;
         });
 
         Event::assertDispatched(\Domains\Delivery\Events\CampaignSendingStarted::class);

@@ -1,7 +1,7 @@
 ---
 description: "Implement approved Freetter changes, edit the correct module, run focused validation, and hand off completed work to the guardian for review."
-mode: subagent
-model: opencode/qwen3.6-plus
+mode: primary
+model: opencode-go/qwen3.6-plus
 temperature: 0.2
 permission:
   read: allow
