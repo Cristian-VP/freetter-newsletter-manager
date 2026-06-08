@@ -2,6 +2,7 @@ import AuthenticatedHomeLayout from "@/layouts/authenticated-home-layout";
 import { Head, useForm, Link } from "@inertiajs/react";
 import { ArrowLeft, Pencil } from "lucide-react";
 import React, { useRef, useState } from "react";
+import { optimizeImage } from "@/lib/image-optimizer";
 
 export default function ProfileEdit({ profile }: { profile: any }) {
   const { data, setData, post, processing, errors } = useForm({
@@ -15,11 +16,17 @@ export default function ProfileEdit({ profile }: { profile: any }) {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(profile.avatar_url);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setData("avatar", file);
-      setAvatarPreview(URL.createObjectURL(file));
+      let file = e.target.files[0];
+
+      // Usar el optimizador global (1MB, max 800px para avatar)
+      const optimizedFile = await optimizeImage(file, 1, 800);
+
+      if (optimizedFile) {
+        setData("avatar", optimizedFile);
+        setAvatarPreview(URL.createObjectURL(optimizedFile));
+      }
     }
   };
 

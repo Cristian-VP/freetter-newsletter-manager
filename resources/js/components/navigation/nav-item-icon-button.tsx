@@ -37,7 +37,6 @@ export function NavItemIconButton({
     return (
       <Link
         href={href}
-        prefetch
         onClick={onClick}
         className={cn(
           "inline-flex items-center gap-4 rounded-2xl px-3 py-2.5 transition-colors hover:bg-zinc-100",
