@@ -348,6 +348,8 @@ class ProfileController extends Controller
 
         $user->save();
 
+        Inertia::clearHistory();
+
         return redirect()->route('profile');
     }
 

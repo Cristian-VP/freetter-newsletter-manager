@@ -31,7 +31,7 @@ class NewsletterPublishedNotification extends Notification
         $authorEmail = $this->post->author?->email;
 
         $mailMessage = new MailMessage;
-        $mailMessage->subject($workspaceName.': '.$this->post->title);
+        $mailMessage->subject($this->post->title);
         $mailMessage->from($fromAddress, $fromName);
 
         if (is_string($authorEmail) && $authorEmail !== '') {
@@ -43,6 +43,7 @@ class NewsletterPublishedNotification extends Notification
             'workspaceName' => $workspaceName,
             'authorName' => $authorName,
             'newsletterHtml' => $this->renderNewsletterHtml(),
+            'excerpt' => $this->post->getExcerpt(150),
         ]);
 
         return $mailMessage;
@@ -60,11 +61,18 @@ class NewsletterPublishedNotification extends Notification
     {
         $newsletterHtml = $this->renderNewsletterHtml();
 
+        $excerpt = $this->post->getExcerpt(200);
+        $title = $this->post->title;
+        if (str_starts_with($excerpt, $title)) {
+            $excerpt = trim(mb_substr($excerpt, mb_strlen($title)));
+        }
+
         $html = view('emails.newsletter-published-html', [
             'post' => $this->post,
             'workspaceName' => $this->post->workspace?->name ?? 'Freetter',
             'authorName' => $this->post->author?->name ?? 'Freetter',
             'newsletterHtml' => $newsletterHtml,
+            'excerpt' => $excerpt,
         ])->render();
 
         $inliner = new CssToInlineStyles;
