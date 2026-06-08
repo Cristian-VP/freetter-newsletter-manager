@@ -14,6 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { optimizeImage } from "@/lib/image-optimizer";
 
 interface CreateNoteModalProps {
   isOpen: boolean;
@@ -603,7 +604,7 @@ export function CreateNoteModal({ isOpen, workspaceId, initialQuote = null, onCl
     applyEditorCommand("formatBlock", "blockquote");
   };
 
-  const handleAddFiles = (fileList: FileList | null) => {
+  const handleAddFiles = async (fileList: FileList | null) => {
     if (!fileList || fileList.length === 0) {
       return;
     }
@@ -613,10 +614,19 @@ export function CreateNoteModal({ isOpen, workspaceId, initialQuote = null, onCl
       return;
     }
 
-    setImages((previous) => {
-      const next = [...previous, ...incoming].slice(0, MAX_IMAGES);
+    // Optimizar las imágenes (máximo 2MB y resolución Full HD 1920px para mantener buena calidad en posts)
+    const optimizedIncoming: File[] = [];
+    for (const file of incoming) {
+      const optimized = await optimizeImage(file, 2, 1920);
+      if (optimized) {
+        optimizedIncoming.push(optimized);
+      }
+    }
 
-      if (previous.length + incoming.length > MAX_IMAGES) {
+    setImages((previous) => {
+      const next = [...previous, ...optimizedIncoming].slice(0, MAX_IMAGES);
+
+      if (previous.length + optimizedIncoming.length > MAX_IMAGES) {
         setErrorMessage(`Solo puedes añadir hasta ${MAX_IMAGES} imágenes por post.`);
       } else {
         setErrorMessage(null);

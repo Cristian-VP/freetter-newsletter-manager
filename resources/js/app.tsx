@@ -18,6 +18,7 @@ const modulePages = import.meta.glob<InertiaPageModule>("../../app-modules/*/res
 
 createInertiaApp({
   title: (title) => `${title} - ${appName}`,
+
   resolve: (name) => {
     if (!name.includes("::")) {
       return resolvePageComponent(`./pages/${name}.tsx`, rootPages).then((module) => module.default);

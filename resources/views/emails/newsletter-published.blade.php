@@ -1,10 +1,4 @@
 <x-mail::message>
-# {{ $post->title }}
-
-<p style="margin: 0 0 16px; color: #6b7280; font-size: 14px;">
-    {{ $authorName }} · {{ $workspaceName }}
-</p>
-
 <div style=" width: 900px; font-size: 16px; line-height: 1.75; color: #111827;">
     {!! $newsletterHtml !!}
 </div>
