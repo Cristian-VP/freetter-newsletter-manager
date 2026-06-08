@@ -27,7 +27,7 @@ export function ProfileNavAvatar({
   const content = (
     <>
       <Avatar className={cn("h-7 w-7 border border-zinc-300", isActive ? "ring-2 ring-zinc-900 ring-offset-1" : "ring-0")}>
-        <AvatarImage src={avatar} alt={name} />
+        <AvatarImage key={avatar} src={avatar} alt={name} />
         <AvatarFallback className="bg-zinc-200 text-[11px] text-zinc-700">{name ? getInitials(name) : ""}</AvatarFallback>
       </Avatar>
       {showLabel ? <span className="text-xl satoshi-medium text-zinc-900">Perfil</span> : null}

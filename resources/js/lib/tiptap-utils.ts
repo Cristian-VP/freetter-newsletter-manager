@@ -12,6 +12,7 @@ import {
   type Editor,
   type NodeWithPos,
 } from "@tiptap/react"
+import { optimizeImage } from "@/lib/image-optimizer"
 
 export const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
@@ -368,7 +369,19 @@ export const handleImageUpload = async (
     throw new Error("No file provided")
   }
 
-  if (file.size > MAX_FILE_SIZE) {
+  // Comprimir la imagen antes de subir (max 1MB, max 1920px Full HD para newsletters)
+  // Lo bajamos a 1MB para asegurarnos de que NUNCA choque con el límite de 2MB por defecto de PHP
+  let fileToUpload = file;
+  try {
+    const optimized = await optimizeImage(file, 1, 1920);
+    if (optimized) {
+      fileToUpload = optimized;
+    }
+  } catch (err) {
+    console.error("Error optimizando imagen Tiptap:", err);
+  }
+
+  if (fileToUpload.size > MAX_FILE_SIZE) {
     throw new Error(
       `File size exceeds maximum allowed (${MAX_FILE_SIZE / (1024 * 1024)}MB)`
     )
@@ -377,7 +390,7 @@ export const handleImageUpload = async (
   return new Promise<string>((resolve, reject) => {
     const xhr = new XMLHttpRequest()
     const formData = new FormData()
-    formData.append("file", file)
+    formData.append("file", fileToUpload)
 
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) {
@@ -434,6 +447,9 @@ export const handleImageUpload = async (
     if (xsrfToken) {
       xhr.setRequestHeader("X-XSRF-TOKEN", xsrfToken)
     }
+
+    xhr.setRequestHeader("Accept", "application/json")
+    xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest")
 
     xhr.send(formData)
   })
