@@ -14,7 +14,7 @@ import {
 } from "@tiptap/react"
 import { optimizeImage } from "@/lib/image-optimizer"
 
-export const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5MB
+export const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
 export const MAC_SYMBOLS: Record<string, string> = {
   mod: "⌘",
