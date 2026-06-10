@@ -1,4 +1,4 @@
-import AuthenticatedHomeLayout from "@/layouts/authenticated-home-layout";
+import UserHomeLayout from "@/layouts/user-home-layout";
 import { type PageProps } from "@/types";
 import { Head, Link, router, usePage } from "@inertiajs/react";
 import { Ellipsis } from "lucide-react";
@@ -154,7 +154,7 @@ export default function NewsletterResume() {
 
 
   return (
-    <AuthenticatedHomeLayout>
+    <UserHomeLayout>
       <Head title="Crear Newsletter" />
 
       <section className="mx-auto flex w-full max-w-190 flex-col gap-5 md:max-w-205">
@@ -298,7 +298,7 @@ export default function NewsletterResume() {
                 className="inline-flex h-17 w-full items-center gap-3 rounded-[22px] border border-zinc-300 bg-transparent px-5 text-base font-semibold text-zinc-900 transition hover:border-transparent hover:bg-black hover:text-white md:h-15.5 md:w-[46%]"
               >
                 {auth.user?.avatar ? (
-                  <img src={auth.user.avatar} alt={auth.user.name ?? "Usuario"} className="h-10 w-10 rounded-full object-cover" />
+                  <img src={auth.user!.avatar} alt={auth.user!.name ?? "Usuario"} className="h-10 w-10 rounded-full object-cover" />
                 ) : (
                   <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-zinc-900 text-sm font-semibold text-white">
                     {initialsFromName(auth.user?.name ?? null)}
@@ -326,7 +326,7 @@ export default function NewsletterResume() {
           {snackbar.message}
         </button>
       ) : null}
-    </AuthenticatedHomeLayout>
+    </UserHomeLayout>
   );
 }
 

@@ -1,4 +1,4 @@
-import AuthenticatedHomeLayout from "@/layouts/authenticated-home-layout";
+import UserHomeLayout from "@/layouts/user-home-layout";
 import { type PageProps } from "@/types";
 import { Head, router, usePage } from "@inertiajs/react";
 import { ArrowLeft } from "lucide-react";
@@ -34,7 +34,7 @@ export default function NewsletterPreview() {
   }, [post?.published_at]);
 
   return (
-    <AuthenticatedHomeLayout>
+    <UserHomeLayout>
       <Head title={post ? post.title : "Preview Newsletter"} />
 
       <section className="mx-auto flex w-full max-w-190 flex-col gap-5 md:max-w-205">
@@ -91,6 +91,6 @@ export default function NewsletterPreview() {
           )}
         </div>
       </section>
-    </AuthenticatedHomeLayout>
+    </UserHomeLayout>
   );
 }

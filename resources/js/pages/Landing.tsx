@@ -84,22 +84,16 @@ export default function Landing() {
                                 Our story
                             </Link>
                             <Link href="#" className="hidden text-zinc-600 hover:text-black lg:block">
-                                Membership
+                                Your Story
                             </Link>
                             <Link href="#" className="hidden text-zinc-600 hover:text-black lg:block">
-                                Write
+                                Membership
                             </Link>
-                            <button
-                                onClick={(e) => { e.stopPropagation(); setAuthMode('signin'); setIsAuthOpen(true); }}
-                                className="hidden text-zinc-600 hover:text-black lg:block"
-                            >
-                                Sign in
-                            </button>
                             <button
                                 onClick={(e) => { e.stopPropagation(); setAuthMode('signup'); setIsAuthOpen(true); }}
                                 className="hidden md:rounded-full text-zinc-200 md:bg-black transition hover:bg-zinc-800 hover:text-zinc-100 md:px-4 md:py-2 md:block shrink-0"
                             >
-                                Get started
+                                Start writing
                             </button>
                         </nav>
 
@@ -129,8 +123,8 @@ export default function Landing() {
                             <nav className="flex flex-col gap-6 text-2xl">
                                 {/* Ponemos href="/" para Our story y lo marca clarito en la landing */}
                                 <Link href="/" className={getMobileLinkClass('/')}>Our story</Link>
+                                <Link href="/your-story" className={getMobileLinkClass('/your-story')}>Your Story</Link>
                                 <Link href="/membership" className={getMobileLinkClass('/membership')}>Membership</Link>
-                                <Link href="/write" className={getMobileLinkClass('/write')}>Write</Link>
                             </nav>
                         </div>
                         <div className="flex justify-between px-6 py-6 text-xs text-zinc-500 font-medium tracking-wide">

@@ -1,4 +1,4 @@
-import AuthenticatedHomeLayout from "@/layouts/authenticated-home-layout";
+import UserHomeLayout from "@/layouts/user-home-layout";
 import { type PageProps } from "@/types";
 import { Head, usePage } from "@inertiajs/react";
 
@@ -6,7 +6,7 @@ export default function Home() {
     const { auth } = usePage<PageProps>().props;
 
     return (
-        <AuthenticatedHomeLayout>
+        <UserHomeLayout>
             <Head title="Home " />
 
             <section className="mx-auto flex w-full max-w-3xl flex-col gap-4">
@@ -24,6 +24,6 @@ export default function Home() {
                     <p className="mt-2 text-zinc-700">Aquí se renderizarán los cards/posts del timeline.</p>
                 </div>
             </section>
-        </AuthenticatedHomeLayout>
+        </UserHomeLayout>
     );
 }

@@ -1,3 +1,4 @@
+import { AuthModal } from "@/components/auth-modal";
 import { DesktopSideNav } from "@/components/navigation/desktop-side-nav";
 import { AccountMenu } from "@/components/navigation/account-menu";
 import { MobileBottomToolbar } from "@/components/navigation/mobile-bottom-toolbar";
@@ -8,21 +9,30 @@ import { type PageProps } from "@/types";
 import { router, usePage } from "@inertiajs/react";
 import { useState } from "react";
 
-interface AuthenticatedHomeLayoutProps {
+interface UserHomeLayoutProps {
   children: React.ReactNode;
   onCreateClick?: () => void;
 }
 
-export default function AuthenticatedHomeLayout({ children, onCreateClick }: AuthenticatedHomeLayoutProps) {
+export default function UserHomeLayout({ children, onCreateClick }: UserHomeLayoutProps) {
   const page = usePage<PageProps>();
   const { auth } = page.props;
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isDesktopExpanded, setIsDesktopExpanded] = useState(false);
   const [isDesktopMenuOpen, setIsDesktopMenuOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
+  const isGuest = !auth.user;
   const activeItem = resolveActiveNavItem(page.url);
 
+  const handleLoginClick = () => setIsAuthModalOpen(true);
+
   const handlePostCreateClick = () => {
+    if (isGuest) {
+      handleLoginClick();
+      return;
+    }
+
     if (onCreateClick) {
       onCreateClick();
 
@@ -38,6 +48,8 @@ export default function AuthenticatedHomeLayout({ children, onCreateClick }: Aut
         isMenuOpen={isMobileMenuOpen}
         onMenuToggle={() => setIsMobileMenuOpen((value) => !value)}
         onCreateClick={handlePostCreateClick}
+        isGuest={isGuest}
+        onLoginClick={handleLoginClick}
       />
 
       <DesktopSideNav
@@ -50,6 +62,8 @@ export default function AuthenticatedHomeLayout({ children, onCreateClick }: Aut
         onCreatePostClick={handlePostCreateClick}
         userName={auth.user?.name}
         userAvatar={auth.user?.avatar}
+        isGuest={isGuest}
+        onLoginClick={handleLoginClick}
       />
 
       {isMobileMenuOpen ? (
@@ -66,7 +80,11 @@ export default function AuthenticatedHomeLayout({ children, onCreateClick }: Aut
         activeItem={activeItem}
         userName={auth.user?.name}
         userAvatar={auth.user?.avatar}
+        isGuest={isGuest}
+        onLoginClick={handleLoginClick}
       />
+
+      <AuthModal isOpen={isAuthModalOpen} onClose={() => setIsAuthModalOpen(false)} />
     </div>
   );
 }

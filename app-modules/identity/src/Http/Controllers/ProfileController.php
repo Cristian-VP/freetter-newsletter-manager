@@ -7,6 +7,7 @@ namespace Domains\Identity\Http\Controllers;
 use Domains\Community\Models\Bookmark;
 use Domains\Community\Models\Follower;
 use Domains\Identity\Models\Membership;
+use Domains\Identity\Models\User;
 use Domains\Publishing\Models\Post;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\JsonResponse;
@@ -305,6 +306,113 @@ class ProfileController extends Controller
         })->filter()->values()->all();
 
         return response()->json(['data' => ['bookmarks' => $items]]);
+    }
+
+    public function showPublic(Request $request, string $handle): Response
+    {
+        $handle = ltrim($handle, '@');
+
+        $user = User::query()
+            ->where('handle', '@' . $handle)
+            ->firstOrFail();
+
+        $workspaceId = Membership::query()
+            ->where('user_id', (string) $user->id)
+            ->orderBy('joined_at')
+            ->value('workspace_id');
+
+        return Inertia::render('identity::PublicProfile', [
+            'profile' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'handle' => $user->handle,
+                'bio' => $user->bio,
+                'avatar_url' => $this->resolveAvatarUrl($user->avatar_path ?? null),
+                'workspace_id' => $workspaceId,
+            ],
+        ]);
+    }
+
+    public function publicNewsletters(Request $request, string $handle): JsonResponse
+    {
+        $handle = ltrim($handle, '@');
+
+        $user = User::query()
+            ->where('handle', '@' . $handle)
+            ->firstOrFail();
+
+        $workspaceId = Membership::query()
+            ->where('user_id', (string) $user->id)
+            ->orderBy('joined_at')
+            ->value('workspace_id');
+
+        if (! $workspaceId) {
+            return response()->json(['data' => ['newsletters' => []]]);
+        }
+
+        $posts = Post::query()
+            ->where('workspace_id', $workspaceId)
+            ->where('type', 'newsletter')
+            ->published()
+            ->with(['workspace:id,name,slug'])
+            ->orderByDesc('published_at')
+            ->get(['id', 'title', 'slug', 'published_at', 'workspace_id']);
+
+        $items = $posts->map(fn (Post $post): array => [
+            'id' => $post->id,
+            'title' => $post->title,
+            'slug' => $post->slug,
+            'published_at' => $post->published_at?->toIso8601String(),
+            'view_url' => $post->url(),
+        ])->values()->all();
+
+        return response()->json(['data' => ['newsletters' => $items]]);
+    }
+
+    public function showPublicNewsletter(Request $request, string $handle, string $id): JsonResponse
+    {
+        $handle = ltrim($handle, '@');
+
+        $user = User::query()
+            ->where('handle', '@' . $handle)
+            ->firstOrFail();
+
+        $workspaceId = Membership::query()
+            ->where('user_id', (string) $user->id)
+            ->orderBy('joined_at')
+            ->value('workspace_id');
+
+        abort_unless($workspaceId, 404);
+
+        $post = Post::query()
+            ->where('workspace_id', $workspaceId)
+            ->where('type', 'newsletter')
+            ->with(['author:id,name,avatar_path', 'workspace:id,name,slug'])
+            ->findOrFail($id);
+
+        $paragraphs = $this->extractParagraphs($post->content ?? []);
+        $coverImageUrl = $this->resolveCoverImage($post);
+        $authorAvatarUrl = $post->author
+            ? $this->resolveAvatarUrl($post->author->avatar_path ?? null)
+            : null;
+
+        return response()->json([
+            'data' => [
+                'newsletter' => [
+                    'id'              => $post->id,
+                    'title'           => $post->title,
+                    'slug'            => $post->slug,
+                    'published_at'    => $post->published_at?->toIso8601String(),
+                    'cover_image_url' => $coverImageUrl,
+                    'body_paragraphs' => $paragraphs,
+                    'owner'           => [
+                        'id'         => $post->author?->id,
+                        'name'       => $post->author?->name,
+                        'avatar_url' => $authorAvatarUrl,
+                    ],
+                ],
+            ],
+        ]);
     }
 
     public function edit(Request $request): Response

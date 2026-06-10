@@ -5,7 +5,7 @@ import { NavigationIslandContainer } from "@/components/navigation/navigation-is
 import { ProfileNavAvatar } from "@/components/navigation/profile-nav-avatar";
 import { type HomeNavItemKey } from "@/components/navigation/types";
 import { cn } from "@/lib/utils";
-import { House, LayoutGrid, PencilLine, Plus, UsersRound } from "lucide-react";
+import { House, LayoutGrid, LogIn, PencilLine, Plus, UsersRound } from "lucide-react";
 
 interface DesktopSideNavProps {
   activeItem: HomeNavItemKey | null;
@@ -17,6 +17,8 @@ interface DesktopSideNavProps {
   onCreatePostClick: () => void;
   userName?: string;
   userAvatar?: string;
+  isGuest?: boolean;
+  onLoginClick?: () => void;
 }
 
 export function DesktopSideNav({
@@ -29,6 +31,8 @@ export function DesktopSideNav({
   onCreatePostClick,
   userName,
   userAvatar,
+  isGuest,
+  onLoginClick,
 }: DesktopSideNavProps) {
   const isDashboard = activeItem === "dashboard";
 
@@ -65,7 +69,8 @@ export function DesktopSideNav({
                 icon={House}
                 label="Home"
                 isActive={activeItem === "home"}
-                href="/home"
+                href={isGuest ? undefined : "/home"}
+                onClick={isGuest ? onLoginClick : undefined}
                 showLabel={isExpanded}
               />
 
@@ -75,7 +80,8 @@ export function DesktopSideNav({
                     icon={UsersRound}
                     label="Subscripciones"
                     isActive={activeItem === "subscriptions"}
-                    href="/subscriptions"
+                    href={isGuest ? undefined : "/subscriptions"}
+                    onClick={isGuest ? onLoginClick : undefined}
                     showLabel={isExpanded}
                   />
 
@@ -83,7 +89,8 @@ export function DesktopSideNav({
                     icon={PencilLine}
                     label="Crear"
                     isActive={activeItem === "create"}
-                    href="/newsletters/resume"
+                    href={isGuest ? undefined : "/newsletters/resume"}
+                    onClick={isGuest ? onLoginClick : undefined}
                     showLabel={isExpanded}
                   />
 
@@ -95,13 +102,23 @@ export function DesktopSideNav({
                     showLabel={isExpanded}
                   />
 
-                  <ProfileNavAvatar
-                    name={userName}
-                    avatar={userAvatar}
-                    isActive={activeItem === "profile"}
-                    href="/profile"
-                    showLabel={isExpanded}
-                  />
+                  {isGuest ? (
+                    <NavItemIconButton
+                      icon={LogIn}
+                      label="Iniciar sesión"
+                      isActive={false}
+                      onClick={onLoginClick}
+                      showLabel={isExpanded}
+                    />
+                  ) : (
+                    <ProfileNavAvatar
+                      name={userName}
+                      avatar={userAvatar}
+                      isActive={activeItem === "profile"}
+                      href="/profile"
+                      showLabel={isExpanded}
+                    />
+                  )}
                 </>
               )}
             </nav>

@@ -3,7 +3,7 @@
     {!! $newsletterHtml !!}
 </div>
 
-<x-mail::button :url="route('home').'#post-'.$post->id">
+<x-mail::button :url="route('profile.public', ['handle' => ltrim($post->author->handle ?? '', '@')]).'?newsletter='.$post->id">
 Ver newsletter
 </x-mail::button>
 

@@ -55,3 +55,14 @@ Route::prefix('identity')->name('identity.')->middleware(['web', 'auth'])->group
     Route::get('/profile/bookmarks', [ProfileController::class, 'bookmarks'])
         ->name('profile.bookmarks');
 });
+
+Route::middleware('web')->group(function (): void {
+    Route::get('/u/{handle}', [ProfileController::class, 'showPublic'])
+        ->name('profile.public');
+
+    Route::get('/u/{handle}/newsletters', [ProfileController::class, 'publicNewsletters'])
+        ->name('profile.public.newsletters');
+
+    Route::get('/u/{handle}/newsletters/{id}', [ProfileController::class, 'showPublicNewsletter'])
+        ->name('profile.public.newsletters.show');
+});

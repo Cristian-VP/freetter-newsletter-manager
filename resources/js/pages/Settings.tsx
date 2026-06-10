@@ -1,9 +1,9 @@
-import AuthenticatedHomeLayout from "@/layouts/authenticated-home-layout";
+import UserHomeLayout from "@/layouts/user-home-layout";
 import { Head } from "@inertiajs/react";
 
 export default function Settings() {
   return (
-    <AuthenticatedHomeLayout>
+    <UserHomeLayout>
       <Head title="Settings - Freetter" />
 
       <section className="mx-auto flex w-full max-w-3xl flex-col gap-4">
@@ -12,6 +12,6 @@ export default function Settings() {
           <p className="mt-3 text-zinc-600">Aqui podras configurar tu cuenta.</p>
         </div>
       </section>
-    </AuthenticatedHomeLayout>
+    </UserHomeLayout>
   );
 }

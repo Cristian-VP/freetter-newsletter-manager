@@ -167,7 +167,7 @@
                                 {!! $newsletterHtml !!}
                             </div>
                             <div class="newsletter-cta">
-                                <a href="{{ route('home').'#post-'.$post->id }}">Ver newsletter</a>
+                                <a href="{{ route('profile.public', ['handle' => ltrim($post->author->handle ?? '', '@')]) }}?newsletter={{ $post->id }}">Ver newsletter</a>
                             </div>
                             <p class="newsletter-footer">
                                 Si prefieres leerla en la web, puedes abrirla desde el enlace anterior.

@@ -1,6 +1,6 @@
 import { Head, usePage } from "@inertiajs/react";
 import { type PageProps } from "@/types";
-import AuthenticatedHomeLayout from "@/layouts/authenticated-home-layout";
+import UserHomeLayout from "@/layouts/user-home-layout";
 import WeeklyActivityChart, { type WeeklyActivityData } from "@/components/chart/weekly-activity-chart";
 
 interface DashboardStats {
@@ -44,14 +44,14 @@ export default function Dashboard() {
   const { auth, stats, weekly_activity, recent_logs } = usePage<DashboardPageProps>().props;
 
   const memberSince = auth.user?.created_at
-    ? new Date(auth.user.created_at).toLocaleDateString("es-ES", {
+    ? new Date(auth.user!.created_at).toLocaleDateString("es-ES", {
         month: "long",
         year: "numeric",
       })
     : "";
 
   return (
-    <AuthenticatedHomeLayout>
+    <UserHomeLayout>
       <Head title="Dashboard" />
 
       <section className="mx-auto flex w-full max-w-3xl flex-col gap-4">
@@ -135,7 +135,7 @@ export default function Dashboard() {
           </div>
         )}
       </section>
-    </AuthenticatedHomeLayout>
+    </UserHomeLayout>
   );
 }
 
