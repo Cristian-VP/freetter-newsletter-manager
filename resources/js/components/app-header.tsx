@@ -151,9 +151,9 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-9 px-1.5">
                   <Avatar className="h-7 w-7 overflow-hidden rounded-lg">
-                    <AvatarImage key={auth.user.avatar} src={auth.user.avatar} alt={auth.user.name} />
+                    <AvatarImage src={auth.user?.avatar} alt={auth.user?.name} />
                     <AvatarFallback className="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
-                      {getInitials(auth.user.name)}
+                      {getInitials(auth.user?.name ?? '')}
                     </AvatarFallback>
                   </Avatar>
                   <ChevronDown className="hidden h-4 w-4 lg:block" />

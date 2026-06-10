@@ -2,18 +2,22 @@ import { NavItemIconButton } from "@/components/navigation/nav-item-icon-button"
 import { NavigationIslandContainer } from "@/components/navigation/navigation-island-container";
 import { ProfileNavAvatar } from "@/components/navigation/profile-nav-avatar";
 import { type HomeNavItemKey } from "@/components/navigation/types";
-import { House, LayoutGrid, PencilLine, UsersRound } from "lucide-react";
+import { House, LayoutGrid, LogIn, PencilLine, UsersRound } from "lucide-react";
 
 interface MobileBottomToolbarProps {
   activeItem: HomeNavItemKey | null;
   userName?: string;
   userAvatar?: string;
+  isGuest?: boolean;
+  onLoginClick?: () => void;
 }
 
 export function MobileBottomToolbar({
   activeItem,
   userName,
   userAvatar,
+  isGuest,
+  onLoginClick,
 }: MobileBottomToolbarProps) {
   const isDashboard = activeItem === "dashboard";
 
@@ -35,7 +39,8 @@ export function MobileBottomToolbar({
             icon={House}
             label="Home"
             isActive={activeItem === "home"}
-            href="/home"
+            href={isGuest ? undefined : "/home"}
+            onClick={isGuest ? onLoginClick : undefined}
             className="px-3"
           />
 
@@ -45,7 +50,8 @@ export function MobileBottomToolbar({
                 icon={UsersRound}
                 label="Subscripciones"
                 isActive={activeItem === "subscriptions"}
-                href="/subscriptions"
+                href={isGuest ? undefined : "/subscriptions"}
+                onClick={isGuest ? onLoginClick : undefined}
                 className="px-3"
               />
 
@@ -53,17 +59,28 @@ export function MobileBottomToolbar({
                 icon={PencilLine}
                 label="Crear"
                 isActive={activeItem === "create"}
-                href="/newsletters/resume"
+                href={isGuest ? undefined : "/newsletters/resume"}
+                onClick={isGuest ? onLoginClick : undefined}
                 className="px-3"
               />
 
-              <ProfileNavAvatar
-                name={userName}
-                avatar={userAvatar}
-                isActive={activeItem === "profile"}
-                href="/profile"
-                className="px-3"
-              />
+              {isGuest ? (
+                <NavItemIconButton
+                  icon={LogIn}
+                  label="Iniciar sesión"
+                  isActive={false}
+                  onClick={onLoginClick}
+                  className="px-3"
+                />
+              ) : (
+                <ProfileNavAvatar
+                  name={userName}
+                  avatar={userAvatar}
+                  isActive={activeItem === "profile"}
+                  href="/profile"
+                  className="px-3"
+                />
+              )}
             </>
           )}
         </nav>

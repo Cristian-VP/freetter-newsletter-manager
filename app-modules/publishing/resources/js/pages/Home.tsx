@@ -1,4 +1,4 @@
-import AuthenticatedHomeLayout from "@/layouts/authenticated-home-layout";
+import UserHomeLayout from "@/layouts/user-home-layout";
 import { Head, router } from "@inertiajs/react";
 import {
   AlertTriangle,
@@ -848,7 +848,7 @@ export default function Home({ posts, workspace_id, feed }: HomePageProps) {
   };
 
   return (
-    <AuthenticatedHomeLayout
+    <UserHomeLayout
       onCreateClick={() => {
         setRepostComposerPost(null);
         setIsComposerOpen(true);
@@ -1287,6 +1287,6 @@ export default function Home({ posts, workspace_id, feed }: HomePageProps) {
           {snackbar.message}
         </button>
       ) : null}
-    </AuthenticatedHomeLayout>
+    </UserHomeLayout>
   );
 }

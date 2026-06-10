@@ -1,4 +1,4 @@
-import AuthenticatedHomeLayout from "@/layouts/authenticated-home-layout"
+import UserHomeLayout from "@/layouts/user-home-layout";
 import { type PageProps } from "@/types"
 import { Head, router, usePage } from "@inertiajs/react"
 import { ArrowLeft, CalendarClock, Send } from "lucide-react"
@@ -112,7 +112,7 @@ const fromResume = useMemo(() => new URLSearchParams(window.location.search).get
     setErrorMessage(null)
 
     const response = await sendJson(`/publishing/posts/${post.id}/publish`, "POST", {
-      published_by_user_id: auth.user.id,
+      published_by_user_id: auth.user!.id,
       audience,
       delivery_channels: deliveryChannels,
     })
@@ -125,7 +125,7 @@ const fromResume = useMemo(() => new URLSearchParams(window.location.search).get
     }
 
     router.visit("/newsletters/resume?snackbar=newsletter-publicada")
-  }, [audience, auth.user.id, deliveryChannels, post])
+  }, [audience, auth.user!.id, deliveryChannels, post])
 
   const schedulePublication = useCallback(async () => {
     if (!post) {
@@ -172,7 +172,7 @@ const fromResume = useMemo(() => new URLSearchParams(window.location.search).get
   }, [audience, deliveryChannels, post, scheduleAt])
 
   return (
-    <AuthenticatedHomeLayout>
+    <UserHomeLayout>
       <Head title={post ? `Publicar · ${post.title}` : "Publicar newsletter"} />
 
       <section className="mx-auto flex w-full max-w-190 flex-col gap-5 md:max-w-205">
@@ -306,6 +306,6 @@ const fromResume = useMemo(() => new URLSearchParams(window.location.search).get
           </div>
         </div>
       </section>
-    </AuthenticatedHomeLayout>
+    </UserHomeLayout>
   )
 }

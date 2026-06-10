@@ -1,4 +1,4 @@
-import AuthenticatedHomeLayout from "@/layouts/authenticated-home-layout";
+import UserHomeLayout from "@/layouts/user-home-layout";
 import { Head, useForm, Link } from "@inertiajs/react";
 import { ArrowLeft, Pencil } from "lucide-react";
 import React, { useRef, useState } from "react";
@@ -37,7 +37,7 @@ export default function ProfileEdit({ profile }: { profile: any }) {
   };
 
   return (
-    <AuthenticatedHomeLayout>
+    <UserHomeLayout>
       <Head title="Editar perfil" />
 
       <section className="mx-auto flex w-full max-w-190 flex-col gap-5 md:max-w-205 pb-12">
@@ -132,6 +132,6 @@ export default function ProfileEdit({ profile }: { profile: any }) {
           </div>
         </form>
       </section>
-    </AuthenticatedHomeLayout>
+    </UserHomeLayout>
   );
 }

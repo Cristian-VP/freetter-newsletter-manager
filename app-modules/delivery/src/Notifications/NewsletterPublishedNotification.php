@@ -44,9 +44,21 @@ class NewsletterPublishedNotification extends Notification
             'authorName' => $authorName,
             'newsletterHtml' => $this->renderNewsletterHtml(),
             'excerpt' => $this->post->getExcerpt(150),
+            'newsletterUrl' => $this->buildNewsletterUrl(),
         ]);
 
         return $mailMessage;
+    }
+
+    private function buildNewsletterUrl(): string
+    {
+        $handle = ltrim($this->post->author->handle ?? '', '@');
+
+        if ($handle === '') {
+            return route('home').'#post-'.$this->post->id;
+        }
+
+        return route('profile.public', ['handle' => $handle]).'?newsletter='.$this->post->id;
     }
 
     public function renderNewsletterHtml(): string
@@ -73,6 +85,7 @@ class NewsletterPublishedNotification extends Notification
             'authorName' => $this->post->author?->name ?? 'Freetter',
             'newsletterHtml' => $newsletterHtml,
             'excerpt' => $excerpt,
+            'newsletterUrl' => $this->buildNewsletterUrl(),
         ])->render();
 
         $inliner = new CssToInlineStyles;

@@ -1,4 +1,4 @@
-import AuthenticatedHomeLayout from "@/layouts/authenticated-home-layout";
+import UserHomeLayout from "@/layouts/user-home-layout";
 import { type PageProps } from "@/types";
 import { Head, Link, usePage } from "@inertiajs/react";
 import { ArrowLeft, Bookmark, X } from "lucide-react";
@@ -154,7 +154,7 @@ export default function Profile() {
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <AuthenticatedHomeLayout>
+    <UserHomeLayout>
       <Head title={`${profile.name} — Perfil`} />
 
       {/* ── Newsletter Detail Overlay ─────────────────────────────────────── */}
@@ -253,7 +253,7 @@ export default function Profile() {
           )}
         </div>
       </section>
-    </AuthenticatedHomeLayout>
+    </UserHomeLayout>
   );
 }
 
