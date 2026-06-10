@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { AuthModal } from '../components/auth-modal';
 import { BurgerMenuButton } from '@/components/navigation/burger-menu-button';
+import { Logotipo } from '@/components/logotipo';
 import { type PageProps } from '@/types';
 
 export default function Landing() {
@@ -62,8 +63,8 @@ export default function Landing() {
                 >
 
                     <div className="flex items-center px-6 lg:px-12">
-                        <Link href="/" className="satoshi-bold text-4xl tracking-tight">
-                            Freetter
+                        <Link href="/" className="flex items-center">
+                            <Logotipo className="h-8 w-auto text-zinc-900" />
                         </Link>
                     </div>
 
@@ -80,13 +81,13 @@ export default function Landing() {
                             pl-0
                             md:px-6
                         ">
-                            <Link href="#" className="hidden text-zinc-600 hover:text-black lg:block">
+                            <Link href="/our-story" className="hidden text-zinc-600 hover:text-black lg:block">
                                 Our story
                             </Link>
-                            <Link href="#" className="hidden text-zinc-600 hover:text-black lg:block">
+                            <Link href="/your-story" className="hidden text-zinc-600 hover:text-black lg:block">
                                 Your Story
                             </Link>
-                            <Link href="#" className="hidden text-zinc-600 hover:text-black lg:block">
+                            <Link href="/membership" className="hidden text-zinc-600 hover:text-black lg:block">
                                 Membership
                             </Link>
                             <button
@@ -122,13 +123,13 @@ export default function Landing() {
                         <div className="flex-1 overflow-y-auto px-6 py-22">
                             <nav className="flex flex-col gap-6 text-2xl">
                                 {/* Ponemos href="/" para Our story y lo marca clarito en la landing */}
-                                <Link href="/" className={getMobileLinkClass('/')}>Our story</Link>
+                                <Link href="/our-story" className={getMobileLinkClass('/our-story')}>Our story</Link>
                                 <Link href="/your-story" className={getMobileLinkClass('/your-story')}>Your Story</Link>
                                 <Link href="/membership" className={getMobileLinkClass('/membership')}>Membership</Link>
                             </nav>
                         </div>
                         <div className="flex justify-between px-6 py-6 text-xs text-zinc-500 font-medium tracking-wide">
-                            <span>Freetter</span>
+                            <Logotipo className="h-5 w-auto text-zinc-500" />
                         </div>
                     </div>
                 )}

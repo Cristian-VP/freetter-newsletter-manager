@@ -6,6 +6,7 @@ import { ProfileNavAvatar } from "@/components/navigation/profile-nav-avatar";
 import { type HomeNavItemKey } from "@/components/navigation/types";
 import { cn } from "@/lib/utils";
 import { House, LayoutGrid, LogIn, PencilLine, Plus, UsersRound } from "lucide-react";
+import { Isotipo } from "@/components/isotipo";
 
 interface DesktopSideNavProps {
   activeItem: HomeNavItemKey | null;
@@ -50,7 +51,7 @@ export function DesktopSideNav({
       >
         <div className="flex h-full flex-col">
           <div className={cn("px-2 pt-1", isExpanded ? "text-left" : "text-center")}>
-            <span className="satoshi-bold-italic text-3xl tracking-tight text-zinc-900">TT</span>
+            <Isotipo className="h-6 w-auto text-zinc-900" />
           </div>
 
           <div className="flex flex-1 items-center">
@@ -136,7 +137,7 @@ export function DesktopSideNav({
             ariaLabelClose="Close account menu"
           />
 
-          {isMenuOpen ? (
+          {isMenuOpen && !isGuest ? (
             <AccountMenu
               className="absolute bottom-16 left-full ml-3 w-56"
               onNavigate={onToggleMenu}

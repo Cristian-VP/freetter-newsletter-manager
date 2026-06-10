@@ -46,7 +46,7 @@ export default function UserHomeLayout({ children, onCreateClick }: UserHomeLayo
     <div className="min-h-screen bg-[#F7F4ED] text-zinc-900">
       <MobileTopHeader
         isMenuOpen={isMobileMenuOpen}
-        onMenuToggle={() => setIsMobileMenuOpen((value) => !value)}
+        onMenuToggle={isGuest ? handleLoginClick : () => setIsMobileMenuOpen((value) => !value)}
         onCreateClick={handlePostCreateClick}
         isGuest={isGuest}
         onLoginClick={handleLoginClick}
@@ -58,7 +58,7 @@ export default function UserHomeLayout({ children, onCreateClick }: UserHomeLayo
         isMenuOpen={isDesktopMenuOpen}
         onMouseEnter={() => setIsDesktopExpanded(true)}
         onMouseLeave={() => setIsDesktopExpanded(false)}
-        onToggleMenu={() => setIsDesktopMenuOpen((value) => !value)}
+        onToggleMenu={isGuest ? handleLoginClick : () => setIsDesktopMenuOpen((value) => !value)}
         onCreatePostClick={handlePostCreateClick}
         userName={auth.user?.name}
         userAvatar={auth.user?.avatar}
@@ -66,7 +66,7 @@ export default function UserHomeLayout({ children, onCreateClick }: UserHomeLayo
         onLoginClick={handleLoginClick}
       />
 
-      {isMobileMenuOpen ? (
+      {isMobileMenuOpen && !isGuest ? (
         <div className="px-3 pt-2 md:hidden">
           <AccountMenu className="w-full" onNavigate={() => setIsMobileMenuOpen(false)} />
         </div>
