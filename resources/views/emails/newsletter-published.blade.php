@@ -3,7 +3,7 @@
     {!! $newsletterHtml !!}
 </div>
 
-<x-mail::button :url="route('home').'#post-'.$post->id">
+<x-mail::button :url="$newsletterUrl">
 Ver newsletter
 </x-mail::button>
 

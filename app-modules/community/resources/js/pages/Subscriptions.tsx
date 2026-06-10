@@ -1,4 +1,4 @@
-import AuthenticatedHomeLayout from "@/layouts/authenticated-home-layout";
+import UserHomeLayout from "@/layouts/user-home-layout";
 import { Head } from "@inertiajs/react";
 import { ArrowLeft, X } from "lucide-react";
 import { type CSSProperties, useCallback, useEffect, useMemo, useState } from "react";
@@ -88,7 +88,7 @@ export default function Subscriptions() {
   }, [selectedSubscription, selectedSubscriptionId]);
 
   return (
-    <AuthenticatedHomeLayout>
+    <UserHomeLayout>
       <Head title="Subscripciones" />
 
       <section className="mx-auto flex w-full max-w-190 flex-col gap-5 md:max-w-205">
@@ -164,7 +164,7 @@ export default function Subscriptions() {
       {selectedSubscription ? (
         <NewsletterOverlay subscription={selectedSubscription} onClose={() => setSelectedSubscriptionId(null)} />
       ) : null}
-    </AuthenticatedHomeLayout>
+    </UserHomeLayout>
   );
 }
 

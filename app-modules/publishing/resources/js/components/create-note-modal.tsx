@@ -838,7 +838,7 @@ export function CreateNoteModal({ isOpen, workspaceId, initialQuote = null, onCl
         <div className="overflow-y-auto px-4 pb-4 pt-4 md:px-6 md:pt-5">
           <div className="flex items-start gap-3">
             {auth.user?.avatar ? (
-              <img src={auth.user.avatar} alt={auth.user?.name} className="h-11 w-11 rounded-full object-cover" />
+              <img src={auth.user!.avatar} alt={auth.user?.name} className="h-11 w-11 rounded-full object-cover" />
             ) : (
               <div className="flex h-11 w-11 items-center justify-center rounded-full bg-indigo-700 text-lg font-semibold text-white">
                 {initialsFromName(auth.user?.name)}

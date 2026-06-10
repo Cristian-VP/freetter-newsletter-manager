@@ -16,6 +16,18 @@ Route::get('/', function () {
     return Inertia::render('Landing');
 })->name('landing');
 
+Route::get('/our-story', function () {
+    return Inertia::render('OurStory');
+})->name('our-story');
+
+Route::get('/your-story', function () {
+    return Inertia::render('YourStory');
+})->name('your-story');
+
+Route::get('/membership', function () {
+    return Inertia::render('Membership');
+})->name('membership');
+
 // Solo para usuarios autenticados
 Route::middleware('auth')->group(function () {
     Route::get('/settings', function () {

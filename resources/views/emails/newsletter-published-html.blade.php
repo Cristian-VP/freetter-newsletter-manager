@@ -167,7 +167,7 @@
                                 {!! $newsletterHtml !!}
                             </div>
                             <div class="newsletter-cta">
-                                <a href="{{ route('home').'#post-'.$post->id }}">Ver newsletter</a>
+                                <a href="{{ $newsletterUrl }}">Ver newsletter</a>
                             </div>
                             <p class="newsletter-footer">
                                 Si prefieres leerla en la web, puedes abrirla desde el enlace anterior.
